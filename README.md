@@ -1,7 +1,4 @@
-# Progetto C
-
-  
-## Università Ca' Foscari
+# Università Ca' Foscari - Progetto C
 
 ## PROGRAMMAZIONE E LABORATORIO [CT0442] - Proff. A. Marin e S. Vascon
 
