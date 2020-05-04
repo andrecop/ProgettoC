@@ -157,7 +157,7 @@ Aumenta il valore di tutti i pixel di una costante bright. L’effetto è alzare
 <br>
 <br>
 Conversione a scala di grigi:<br>
-<pre>ip_mat * ip_mat_to_gray_scale(ip_mat * in);<br>
+<pre>ip_mat * ip_mat_to_gray_scale(ip_mat * in);</pre><br>
 Converte un’immagine a colori in una a scala di grigi:
 <br>
 <br>
