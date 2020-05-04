@@ -73,16 +73,15 @@ Per le operazioni successive dobbiamo realizzare una nuovo tipo di dato chiamato
 <br>
 Ci appoggeremo alla seguente struttura che dovrete implementare:
 <br>
-
-<pre style="color:#000000;background:#ffffff;"><span style="color:#800000; font-weight:bold; ">typedef</span> <span style="color:#800000; font-weight:bold; ">struct</span> <span style="color:#800080; ">{</span>
-    <span style="color:#800000; font-weight:bold; ">unsigned</span> <span style="color:#800000; font-weight:bold; ">int</span> w<span style="color:#800080; ">;</span> <span style="color:#696969; ">/* &lt;- larghezza */</span>
-    <span style="color:#800000; font-weight:bold; ">unsigned</span> <span style="color:#800000; font-weight:bold; ">int</span> h<span style="color:#800080; ">;</span> <span style="color:#696969; ">/* &lt;- altezza */</span>
-    <span style="color:#800000; font-weight:bold; ">unsigned</span> <span style="color:#800000; font-weight:bold; ">int</span> k<span style="color:#800080; ">;</span> <span style="color:#696969; ">/* &lt;- canali (3 nel nostro caso)*/</span>
-    stats <span style="color:#808030; ">*</span> stat<span style="color:#800080; ">;</span>   <span style="color:#696969; ">/* &lt;- statistiche per canale. */</span>
-    <span style="color:#800000; font-weight:bold; ">float</span> <span style="color:#808030; ">*</span><span style="color:#808030; ">*</span><span style="color:#808030; ">*</span> data<span style="color:#800080; ">;</span> <span style="color:#696969; ">/* &lt;- matrice 3D di valori */</span>
-<span style="color:#800080; ">}</span>ip_mat<span style="color:#800080; ">;</span>
+<pre>
+typedef struct {
+    unsigned int w; /* <- larghezza */
+    unsigned int h; /* <- altezza */
+    unsigned int k; /* <- canali (3 nel nostro caso)*/
+    stats * stat;   /* <- statistiche per canale. */
+    float *** data; /* <- matrice 3D di valori */
+}ip_mat;
 </pre>
-
 <br>
 La matrice a tre dimensioni sarà memorizzata nella variabile data.<br>
 <br>
