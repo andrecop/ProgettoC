@@ -37,57 +37,55 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned  int k, float v){
     float ***new_data;
     unsigned int ih, iw, ik;
 
+    // inizializzo le varibili della matrice
+    new_mat->h = h;     // altezza
+    new_mat->w = w;     // lunghezza
+    new_mat->k = k;     // n° canali
 
-    new_mat->w = w;
-    new_mat->h = h;
-    new_mat->k = k;
-
-    // inizializzo stats (anche se non credo serva,
-    // verrà chiamata la funzione che lo fa)
+    // inizializzo stats (anche se non credo serva, qui verrà chiamata la funzione che lo fa)
     for(ik = 0; ik < k; ik++){
         new_stats[ik].max = v;
         new_stats[ik].min = v;
         new_stats[ik].mean = v;
     }
 
-    new_data = (float ***)malloc(sizeof(float **) * h);
+    new_data = (float ***)malloc(sizeof(float **) * h);             // creo matrice altezza
     for(ih = 0; ih < h; ih++){
-        new_data[ih] = (float **)malloc(sizeof(float *) * w);
+        new_data[ih] = (float **)malloc(sizeof(float *) * w);       // aggiungo dimensione lunghezza
         for(iw = 0; iw < w; iw++){
-            new_data[ih][iw] = (float *)malloc(sizeof(float) * k);
+            new_data[ih][iw] = (float *)malloc(sizeof(float) * k);  // aggiungo i canali
             for(ik = 0; ik < k; ik++){
-                new_data[ih][iw][ik] = v;
+                new_data[ih][iw][ik] = v;                           // setto il valore di default
             }
         }
     }
 
-    new_mat->stat = new_stats;
-    new_mat->data = new_data;
-    return new_mat;
+    new_mat->stat = new_stats;                                      // setto stat
+    new_mat->data = new_data;                                       // e data
+
+    return new_mat;                                                 // ritorno la matrice inizializzata
 }
 
 /* Libera la memoria (data, stat e la struttura) */
 void ip_mat_free(ip_mat *a){
-    return;
-    int ih, iw, ik;
-    int h = a->h;
-    int w = a->w;
-    int k = a->k;
+    int ih, iw;                     // variabili per scorrere
+    int h = a->h;                   // recupero l'altezza
+    int w = a->w;                   // recupero la lunghezza
+    int k = a->k;                   // recupero il numero di canali
 
-    for(ik = 0; ik < k; ik++){
-        free(a->stat[ik]);
-    }
+    free(a->stat);                  // libero stat
 
     for(ih = 0; ih < h; ih++){
         for(iw = 0; iw < w; iw++){
-            for(ik = 0; ik < k; ik++){
-                free(a->data[ih][iw][ik]);
-            }
+            free(a->data[ih][iw]);  // libero i canali per ciascuna lunghezza
         }
+        free(a->data[ih]);          // libero la lunghezza per ciascuna altezza
     }
 
-    free(*a);
-    return;
+    free(a->data);                  // libero l'altezza
+    free(a);                        // libero la matrice che conteneva tutto
+
+    return;                         // fine
 }
 
 /* Restituisce il valore in posizione i,j,k */
@@ -105,33 +103,33 @@ void set_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k, float v){
  * e li salva dentro la struttura ip_mat stats
  * */
 void compute_stats(ip_mat * t){
-    int ih, iw, ik;
-    float val;
-    int h = t->h;
-    int w = t->w;
-    int k = t->k;
-    float minimo = FLT_MAX;
-    float massimo = FLT_MIN;
-    float media;
+    int ih, iw, ik;                         // variabili per scorrere
+    float val;                              // variabile per salvare il valore in "data"
+    int h = t->h;                           // recupero l'altezza
+    int w = t->w;                           // recupero la lunghezza
+    int k = t->k;                           // recupero il numero di canali
+    float minimo = FLT_MAX;                 // setto il minimo al max float
+    float massimo = FLT_MIN;                // setto in massimo al min float
+    float media;                            // qui calcolerò la media
 
     for(ih = 0; ih < h; ih++){
         for(iw = 0; iw < w; iw++){
             for(ik = 0; ik < k; ik++){
-                val = t->data[ih][iw][ik];
+                val = t->data[ih][iw][ik];  // estraggo il valore
                 if(val < minimo)
-                    minimo = val;
+                    minimo = val;           // salvo il minimo (di sicuro sarà più piccolo di max float)
                 if(val > massimo)
-                    massimo = val;
+                    massimo = val;          // salvo il massimo (il contrario di sopra ↑)
             }
         }
     }
 
-    media = (massimo + minimo) / 2;
-    t->stat->max = massimo;
-    t->stat->min = minimo;
-    t->stat->mean = media;
+    media = (massimo + minimo) / 2;         // calcolo la media
+    t->stat->max = massimo;                 // setto il massimo
+    t->stat->min = minimo;                  // il minimo
+    t->stat->mean = media;                  // e la media
 
-    return;
+    return;                                 // fine
 }
 
 /*----------------------------------------------------------------------------------------------
@@ -144,7 +142,30 @@ void compute_stats(ip_mat * t){
 void ip_mat_init_random(ip_mat * t, float mean, float var);
 
 /* Crea una copia di una ip_mat e lo restituisce in output */
-ip_mat * ip_mat_copy(ip_mat * in);
+ip_mat * ip_mat_copy(ip_mat * in){
+    ip_mat * copia;                                             // nuova matrice (copia)
+    unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
+    unsigned int ih, iw, ik;                                    // variabili per scorrere
+    h = in->h;                                                  // recupero l'altezza
+    w = in->w;                                                  // recupero la lunghezza
+    k = in->k;                                                  // recupero il numero di canali
+
+    copia = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+
+    for(ih = 0; ih < h; ih++){
+        for(iw = 0; iw < w; iw++){
+            for(ik = 0; ik < k; ik++){
+                copia->data[ih][iw][ik] = in->data[ih][iw][ik]; // copio i valori di data
+            }
+        }
+    }
+    for(ik = 0; ik < k; ik++){
+        copia->stat[ik].max = in->stat[ik].max;                 // copio in stat il massimo
+        copia->stat[ik].min = in->stat[ik].min;                 // il minimo
+        copia->stat[ik].mean = in->stat[ik].mean;               // e la media (tanto son gli stessi)
+    }
+    return copia;                                               // fine
+}
 
 /* Restituisce una sotto-matrice, ovvero la porzione individuata da:
  * t->data[row_start...row_end][col_start...col_end][0...k]
