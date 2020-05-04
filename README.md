@@ -9,6 +9,7 @@
   <a href="https://docs.google.com/document/d/1liD_FkU5L6NO-F1iHcYiUlTUN_CsGFXBbt6ayf4jleM/edit"><img src="https://img.shields.io/badge/Moodle-Progetto-green" alt="Progetto" /></a>
 </p>
 
+
 # Image Processing Library (v.1.0)
 ### Scopo:
 Realizzare una libreria in linguaggio C per effettuare operazioni di elaborazione di immagini
