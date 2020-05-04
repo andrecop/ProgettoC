@@ -32,25 +32,31 @@ typedef struct {
  * Inoltre crea un vettore di stats per contenere le statische sui singoli canali.
  * */
 ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned  int k, float v){
-    ip_mat * new_mat = (ip_mat*)malloc(sizeof(ip_mat*));
-    stats * new_stats = (stats*)malloc(sizeof(stats*) * k);
-    float *** new_data[h][w][k];
-    int ih, iw, ik;
+    ip_mat * new_mat = (ip_mat*)malloc(sizeof(ip_mat));
+    stats new_stats[k];
+    float ***new_data;
+    unsigned int ih, iw, ik;
+
 
     new_mat->w = w;
     new_mat->h = h;
     new_mat->k = k;
 
+    // inizializzo stats (anche se non credo serva,
+    // verrà chiamata la funzione che lo fa)
     for(ik = 0; ik < k; ik++){
-        new_stats[ik]->max = v;
-        new_stats[ik]->min = v;
-        new_stats[ik]->mean = v;
+        new_stats[ik].max = v;
+        new_stats[ik].min = v;
+        new_stats[ik].mean = v;
     }
 
+    new_data = (float ***)malloc(sizeof(float **) * h);
     for(ih = 0; ih < h; ih++){
+        new_data[ih] = (float **)malloc(sizeof(float *) * w);
         for(iw = 0; iw < w; iw++){
+            new_data[ih][iw] = (float *)malloc(sizeof(float) * k);
             for(ik = 0; ik < k; ik++){
-                ***new_data[ih][iw][ik] = v;
+                new_data[ih][iw][ik] = v;
             }
         }
     }
@@ -64,9 +70,9 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned  int k, float v){
 void ip_mat_free(ip_mat *a){
     return;
     int ih, iw, ik;
-    int h = t->h;
-    int w = t->w;
-    int k = t->k;
+    int h = a->h;
+    int w = a->w;
+    int k = a->k;
 
     for(ik = 0; ik < k; ik++){
         free(a->stat[ik]);
@@ -80,7 +86,7 @@ void ip_mat_free(ip_mat *a){
         }
     }
 
-    free(a);
+    free(*a);
     return;
 }
 
