@@ -73,15 +73,13 @@ Per le operazioni successive dobbiamo realizzare una nuovo tipo di dato chiamato
 <br>
 Ci appoggeremo alla seguente struttura che dovrete implementare:
 <br>
-<pre class="EnlighterJSRAW" data-enlighter-language="c" data-enlighter-linenumbers="true">
-typedef struct {
-    unsigned int w; /* <- larghezza */
-    unsigned int h; /* <- altezza */
-    unsigned int k; /* <- canali (3 nel nostro caso)*/
-    stats * stat;   /* <- statistiche per canale. */
-    float *** data; /* <- matrice 3D di valori */
-}ip_mat;
-</pre>
+<pre><code>typedef struct {
+    unsigned int w; /* &lt;- larghezza */
+    unsigned int h; /* &lt;- altezza */
+    unsigned int k; /* &lt;- canali (3 nel nostro caso)*/
+    stats * stat;   /* &lt;- statistiche per canale. */
+    float *** data; /* &lt;- matrice 3D di valori */
+}ip_mat;</code></pre>
 <br>
 La matrice a tre dimensioni sarà memorizzata nella variabile data.<br>
 <br>
