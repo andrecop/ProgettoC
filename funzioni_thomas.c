@@ -75,6 +75,19 @@ void ip_mat_free(ip_mat *a)
 
 
 
+float get_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k)
+{
+    return (a->data[i][j][k]);
+}
+
+
+
+void set_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k, float v)
+{
+    a->data[i][j][k] = v;
+}
+
+
 
 
 
