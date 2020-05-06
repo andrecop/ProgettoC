@@ -68,6 +68,7 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned  int k, float v){
 
 /* Libera la memoria (data, stat e la struttura) */
 void ip_mat_free(ip_mat *a){
+    //evitare di istanziare variabili inutili
     int ih, iw;                     // variabili per scorrere
     int h = a->h;                   // recupero l'altezza
     int w = a->w;                   // recupero la lunghezza
@@ -103,6 +104,7 @@ void set_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k, float v){
  * e li salva dentro la struttura ip_mat stats
  * */
 void compute_stats(ip_mat * t){
+    //evitare di istanziare variabili inutili
     int ih, iw, ik;                         // variabili per scorrere
     float val;                              // variabile per salvare il valore in "data"
     int h = t->h;                           // recupero l'altezza
@@ -139,10 +141,30 @@ void compute_stats(ip_mat * t){
 
 /* Inizializza una ip_mat con dimensioni w h e k.
  * Ogni elemento è generato da una gaussiana con media mean e varianza var */
-void ip_mat_init_random(ip_mat * t, float mean, float var);
+void ip_mat_init_random(ip_mat * t, float mean, float var){
+    //evitare di istanziare variabili inutili
+    unsigned int h, w, k;                                               // variabili per salvare dimensioni matrice 3D
+    unsigned int ih, iw, ik;                                            // variabili per scorrere
+    h = t->h;                                                           // recupero l'altezza
+    w = t->w;                                                           // recupero la lunghezza
+    k = t->k;                                                           // recupero il numero di canali
+
+    for(ih = 0; ih < h; ih++){
+        for(iw = 0; iw < w; iw++){
+            for(ik = 0; ik < k; ik++){
+                t->data[ih][iw][ik] = get_normal_random() * var + mean; // creo i valori
+            }
+        }
+    }
+
+    compute_stats(t);
+    return;
+}
+
 
 /* Crea una copia di una ip_mat e lo restituisce in output */
 ip_mat * ip_mat_copy(ip_mat * in){
+    //evitare di istanziare variabili inutili
     ip_mat * copia;                                             // nuova matrice (copia)
     unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
     unsigned int ih, iw, ik;                                    // variabili per scorrere
@@ -172,7 +194,54 @@ ip_mat * ip_mat_copy(ip_mat * in){
  * La terza dimensione la riportiamo per intero, stiamo in sostanza prendendo un sottoinsieme
  * delle righe e delle colonne.
  * */
-ip_mat * ip_mat_subset(ip_mat * t, unsigned int row_start, unsigned int row_end, unsigned int col_start, unsigned int col_end);
+ip_mat * ip_mat_subset(ip_mat * t, unsigned int row_start, unsigned int row_end, unsigned int col_start, unsigned int col_end){
+    //manca verifica indici (range)
+    //snellire evitando di istanziare variabili (che sarebbe inutile)
+
+    ip_mat * sub;                                             // nuova matrice (copia)
+
+    /*
+    float *** data;
+    float ** dataH;
+    float * dataW;
+    */
+
+    unsigned int h, w, k;                        // variabili per dimensioni matrice 3D
+    unsigned int ih, iw, ik;                                    // variabili per scorrere
+    h = row_end;                                                  // recupero l'altezza
+    w = col_end;                                                  // recupero la lunghezza
+    k = t->k;                                                  // recupero il numero di canali
+    
+    sub = ip_mat_create(h - row_start, w - col_start, k, 0.0);                        // creo una nuova ip_mat
+    
+    for(ih = row_start; ih < h; ih++){
+        for(iw = col_start; iw < w; iw++){
+            for(ik = 0; ik < k; ik++){
+                sub->data[ih-row_start][iw-col_start][ik] = t->data[ih][iw][ik]; // copio i valori di data
+            }
+        }
+    }
+
+    compute_stats(sub);
+    
+    /*
+    QUANTO SCRITTO SOTTO E' SOLO UN'IDEA PER NON CREARE UNA NUOVA MATRICE, DA TESTARE!
+
+    sub->h=row_end-row_start;
+    sub->w=col_end-col_start;
+    sub->k=t->k;
+    
+    dataW=&(t->data[row_start][col_start]);
+    dataH=&(dataW[row_start]);
+    data=&(dataH);
+
+    sub->data=data;
+
+    compute_stats(sub);
+    */
+
+    return sub;
+}
 
 /* Concatena due ip_mat su una certa dimensione.
  * Ad esempio:
@@ -194,27 +263,204 @@ ip_mat * ip_mat_subset(ip_mat * t, unsigned int row_start, unsigned int row_end,
  *      out.w = a.w = b.w
  *      out.k = a.k + b.k
  * */
-ip_mat * ip_mat_concat(ip_mat * a, ip_mat * b, int dimensione);
+ip_mat * ip_mat_concat(ip_mat * a, ip_mat * b, int dimensione){
+    // mancano controlli dimensioni
+    //evitare di istanziare variabili inutili
+    //migliorare il codice (abbozzato)
+    //soprattutto la parte degli if e dei for
+    ip_mat * concat;                                             // nuova matrice (copia)
+    unsigned int h, w, k, ha, wa, ka, hb, wb, kb;                                       // variabili per salvare dimensioni matrice 3D
+    unsigned int ih, iw, ik;                                    // variabili per scorrere
+    ha = a->h;                                                  // recupero l'altezza
+    wa = a->w;                                                  // recupero la lunghezza
+    ka = a->k;                                                  // recupero il numero di canali
+    hb = b->h;                                                  // recupero l'altezza
+    wb = b->w;                                                  // recupero la lunghezza
+    kb = b->k;                                                  // recupero il numero di canali
+
+    h=ha;
+    w=wa;
+    k=ka;
+    
+    if(dimensione == 0){
+        h = ha + hb;
+    } else if(dimensione == 1){
+        w = wa + wb;
+    } else if(dimensione == 2){
+        k = ka + kb;
+    }
+
+    concat = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+
+    if(dimensione == 0){
+        for(ih = 0; ih < ha; ih++){
+            for(iw = 0; iw < w; iw++){
+                for(ik = 0; ik < k; ik++){
+                    concat->data[ih][iw][ik] = a->data[ih][iw][ik]; // copio i valori di data
+                }
+            }
+        }
+        for(ih = ha; ih < h; ih++){
+            for(iw = 0; iw < w; iw++){
+                for(ik = 0; ik < k; ik++){
+                    concat->data[ih][iw][ik] = a->data[ih-ha][iw][ik]; // copio i valori di data
+                }
+            }
+        }
+    } else if(dimensione == 1){
+        for(ih = 0; ih < h; ih++){
+            for(iw = 0; iw < wa; iw++){
+                for(ik = 0; ik < k; ik++){
+                    concat->data[ih][iw][ik] = a->data[ih][iw][ik]; // copio i valori di data
+                }
+            }
+            for(iw = wa; iw < w; iw++){
+                for(ik = 0; ik < k; ik++){
+                    concat->data[ih][iw][ik] = a->data[ih][iw-wa][ik]; // copio i valori di data
+                }
+            }
+        }
+    } else if(dimensione == 2){
+        for(ih = 0; ih < h; ih++){
+            for(iw = 0; iw < w; iw++){
+                for(ik = 0; ik < ka; ik++){
+                    concat->data[ih][iw][ik] = a->data[ih][iw][ik]; // copio i valori di data
+                }
+                for(ik = ka; ik < k; ik++){
+                    concat->data[ih][iw][ik] = a->data[ih][iw][ik-ka]; // copio i valori di data
+                }
+            }
+        }
+    }
+    compute_stats(concat);
+
+    return concat;                                               // fine
+}
 
 /**** PARTE 1: OPERAZIONI MATEMATICHE FRA IP_MAT ****/
 /* Esegue la somma di due ip_mat (tutte le dimensioni devono essere identiche)
  * e la restituisce in output. */
-ip_mat * ip_mat_sum(ip_mat * a, ip_mat * b);
+ip_mat * ip_mat_sum(ip_mat * a, ip_mat * b){
+    //controllo dimensioni identiche in ingresso
+    //evitare di istanziare variabili inutili
+    ip_mat * somma;                                             // nuova matrice (copia)
+    unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
+    unsigned int ih, iw, ik;                                    // variabili per scorrere
+    h = a->h;                                                  // recupero l'altezza
+    w = a->w;                                                  // recupero la lunghezza
+    k = a->k;                                                  // recupero il numero di canali
+
+    somma = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+
+    for(ih = 0; ih < h; ih++){
+        for(iw = 0; iw < w; iw++){
+            for(ik = 0; ik < k; ik++){
+                somma->data[ih][iw][ik] = a->data[ih][iw][ik] + b->data[ih][iw][ik]; // copio i valori di data
+            }
+        }
+    }
+    compute_stats(somma);
+    return somma;                                               // fine
+}
 
 /* Esegue la sottrazione di due ip_mat (tutte le dimensioni devono essere identiche)
  * e la restituisce in output.
  * */
-ip_mat * ip_mat_sub(ip_mat * a, ip_mat * b);
+ip_mat * ip_mat_sub(ip_mat * a, ip_mat * b){
+    //controllo dimensioni identiche in ingresso
+    //evitare di istanziare variabili inutili
+    ip_mat * sottrazione;                                             // nuova matrice (copia)
+    unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
+    unsigned int ih, iw, ik;                                    // variabili per scorrere
+    h = a->h;                                                  // recupero l'altezza
+    w = a->w;                                                  // recupero la lunghezza
+    k = a->k;                                                  // recupero il numero di canali
+
+    sottrazione = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+
+    for(ih = 0; ih < h; ih++){
+        for(iw = 0; iw < w; iw++){
+            for(ik = 0; ik < k; ik++){
+                sottrazione->data[ih][iw][ik] = a->data[ih][iw][ik] - b->data[ih][iw][ik]; // copio i valori di data
+            }
+        }
+    }
+    compute_stats(sottrazione);
+    return sottrazione;   
+}
 
 /* Moltiplica un ip_mat per uno scalare c. Si moltiplica c per tutti gli elementi di "a"
  * e si salva il risultato in un nuovo tensore in output. */
-ip_mat * ip_mat_mul_scalar(ip_mat *a, float c);
+ip_mat * ip_mat_mul_scalar(ip_mat *a, float c){
+    //controllo dimensioni identiche in ingresso
+    //evitare di istanziare variabili inutili
+    ip_mat * moltiplicaScalare;                                             // nuova matrice (copia)
+    unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
+    unsigned int ih, iw, ik;                                    // variabili per scorrere
+    h = a->h;                                                  // recupero l'altezza
+    w = a->w;                                                  // recupero la lunghezza
+    k = a->k;                                                  // recupero il numero di canali
+
+    moltiplicaScalare = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+
+    for(ih = 0; ih < h; ih++){
+        for(iw = 0; iw < w; iw++){
+            for(ik = 0; ik < k; ik++){
+                moltiplicaScalare->data[ih][iw][ik] = a->data[ih][iw][ik] * c; // copio i valori di data
+            }
+        }
+    }
+    compute_stats(moltiplicaScalare);
+    return moltiplicaScalare;   
+}
 
 /* Aggiunge ad un ip_mat uno scalare c e lo restituisce in un nuovo tensore in output. */
-ip_mat *  ip_mat_add_scalar(ip_mat *a, float c);
+ip_mat *  ip_mat_add_scalar(ip_mat *a, float c){
+    //controllo dimensioni identiche in ingresso
+    //evitare di istanziare variabili inutili
+    ip_mat * sommaScalare;                                             // nuova matrice (copia)
+    unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
+    unsigned int ih, iw, ik;                                    // variabili per scorrere
+    h = a->h;                                                  // recupero l'altezza
+    w = a->w;                                                  // recupero la lunghezza
+    k = a->k;                                                  // recupero il numero di canali
+
+    sommaScalare = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+
+    for(ih = 0; ih < h; ih++){
+        for(iw = 0; iw < w; iw++){
+            for(ik = 0; ik < k; ik++){
+                sommaScalare->data[ih][iw][ik] = a->data[ih][iw][ik] + c; // copio i valori di data
+            }
+        }
+    }
+    compute_stats(sommaScalare);
+    return sommaScalare;   
+}
 
 /* Calcola la media di due ip_mat a e b e la restituisce in output.*/
-ip_mat * ip_mat_mean(ip_mat * a, ip_mat * b);
+ip_mat * ip_mat_mean(ip_mat * a, ip_mat * b){
+    //controllo dimensioni identiche in ingresso
+    //evitare di istanziare variabili inutili
+    ip_mat * media;                                             // nuova matrice (copia)
+    unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
+    unsigned int ih, iw, ik;                                    // variabili per scorrere
+    h = a->h;                                                  // recupero l'altezza
+    w = a->w;                                                  // recupero la lunghezza
+    k = a->k;                                                  // recupero il numero di canali
+
+    media = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+
+    for(ih = 0; ih < h; ih++){
+        for(iw = 0; iw < w; iw++){
+            for(ik = 0; ik < k; ik++){
+                media->data[ih][iw][ik] = (a->data[ih][iw][ik] + b->data[ih][iw][ik]) / 2; // copio i valori di data
+            }
+        }
+    }
+    compute_stats(media);
+    return media;   
+}
 
 /**** PARTE 2: SEMPLICI OPERAZIONI SU IMMAGINI ****/
 /* Converte un'immagine RGB ad una immagine a scala di grigio.
@@ -307,5 +553,3 @@ void ip_mat_show(ip_mat * t);
 /* Visualizza a video le statistiche per ogni canale.
  * */
 void ip_mat_show_stats(ip_mat * t);
-
-#endif /*IP_LIB_H*/
