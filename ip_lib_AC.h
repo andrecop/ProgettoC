@@ -76,7 +76,7 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w, unsigned int k, float v) 
     
         for(ih = 0; ih < h; ih++) {
             new_data[ih] = (float **)malloc(sizeof(float *) * w);       // aggiungo dimensione lunghezza
-            
+
             if(!**new_data[ih]){
                 printf("Errore ip_mat_create");
                 printf("\n");
@@ -551,7 +551,7 @@ ip_mat * ip_mat_mean(ip_mat * a, ip_mat * b){
         for(ih = 0; ih < media->h; ih++){
             for(iw = 0; iw < media->w; iw++){
                 for(ik = 0; ik < media->k; ik++){
-                    media->data[ih][iw][ik] = (a->data[ih][iw][ik] + b->data[ih][iw][ik]) / 2;  // calcolo la media dei valori
+                    media->data[ih][iw][ik] = (a->data[ih][iw][ik] + b->data[ih][iw][ik]) / 2.0;  // calcolo la media dei valori
                 }                                                                               // presenti in *a e *b e li
             }                                                                                   // inserisco in data
         }
@@ -579,21 +579,133 @@ ip_mat * ip_mat_mean(ip_mat * a, ip_mat * b){
  * e creando una nuova immagine avente per valore di un pixel su ogni canale la media appena calcolata.
  * Avremo quindi che tutti i canali saranno uguali.
  * */
-ip_mat * ip_mat_to_gray_scale(ip_mat * in);
+ip_mat * ip_mat_to_gray_scale(ip_mat * in) {
+    if(*a) {
+        ip_mat * scalaGrigi;                                                                    // nuova matrice
+        unsigned int ih, iw, ik;                                                                // variabili per scorrere
+        float media = 0.0;                                                                      // media
+        float nCanali = in->k;                                                                   // numero di canali
+
+        scalaGrigi = ip_mat_create(in->h, in->w, in->k, 0.0);                                   // creo una nuova ip_mat
+
+        for(ih = 0; ih < scalaGrigi->h; ih++){
+            for(iw = 0; iw < scalaGrigi->w; iw++){
+                for(ik = 0; ik < scalaGrigi->k; ik++){
+                    media += in->data[ih][iw][ik];  // calcolo la media dei valori
+                }                                                                               
+                media /= nCanali;
+                for(ik = 0; ik < scalaGrigi->k; ik++){
+                   scalaGrigi->data[ih][iw][ik] = media;  // calcolo la media dei valori
+                }
+                media = 0.0;
+            }                                                                                   // inserisco in data
+        }
+
+        compute_stats(scalaGrigi);                                                                   // calcolo le stats
+
+        return scalaGrigi;                                                                           // fine
+
+    } else {
+        printf("Errore ip_mat_to_gray_scale");
+        printf("\n");
+        printf("La matrice in ingresso non esiste");
+        exit(1);
+    }
+}
 
 /* Effettua la fusione (combinazione convessa) di due immagini */
-ip_mat * ip_mat_blend(ip_mat * a, ip_mat * b, float alpha);
+ip_mat * ip_mat_blend(ip_mat * a, ip_mat * b, float alpha){
+    if(*a && *b) {
+        ip_mat * bleded;                                                                         // nuova matrice (copia)
+        unsigned int ih, iw, ik;                                                                // variabili per scorrere
+
+        bleded = ip_mat_create(a->h, a->w, a->k, 0.0);                                           // creo una nuova ip_mat
+
+        for(ih = 0; ih < bleded->h; ih++){
+            for(iw = 0; iw < bleded->w; iw++){
+                for(ik = 0; ik < bleded->k; ik++){
+                    bleded->data[ih][iw][ik] = alpha*(a->data[ih][iw][ik]) + (1 - alpha)*(b->data[ih][iw][ik]);  // calcolo la media dei valori
+                }                                                                               // presenti in *a e *b e li
+            }                                                                                   // inserisco in data
+        }
+
+        compute_stats(bleded);                                                                   // calcolo le stats
+
+        return bleded;                                                                           // fine
+
+    } else if(!*a) {
+        printf("Errore ip_mat_blend");
+        printf("\n");
+        printf("La matrice *a non esiste");
+        exit(1);
+    } else {
+        printf("Errore ip_mat_blend");
+        printf("\n");
+        printf("La matrice *b non esiste");
+        exit(1);
+    }
+}
 
 /* Operazione di brightening: aumenta la luminosità dell'immagine
  * aggiunge ad ogni pixel un certo valore*/
-ip_mat * ip_mat_brighten(ip_mat * a, float bright);
+ip_mat * ip_mat_brighten(ip_mat * a, float bright){
+    if(*a) {
+        ip_mat * brightend;                                                                         // nuova matrice (copia)
+        unsigned int ih, iw, ik;                                                                // variabili per scorrere
+
+        brightend = ip_mat_create(a->h, a->w, a->k, 0.0);                                           // creo una nuova ip_mat
+
+        for(ih = 0; ih < brightend->h; ih++){
+            for(iw = 0; iw < brightend->w; iw++){
+                for(ik = 0; ik < brightend->k; ik++){
+                    brightend->data[ih][iw][ik] = bright*(a->data[ih][iw][ik]);  // calcolo la media dei valori
+                }                                                                               // presenti in *a e *b e li
+            }                                                                                   // inserisco in data
+        }
+
+        compute_stats(brightend);                                                                   // calcolo le stats
+
+        return brightend;                                                                           // fine
+
+    } else if(!*a) {
+        printf("Errore ip_mat_brighten");
+        printf("\n");
+        printf("La matrice in ingresso non esiste");
+        exit(1);
+    }
+}
 
 /* Operazione di corruzione con rumore gaussiano:
  * Aggiunge del rumore gaussiano all'immagine, il rumore viene enfatizzato
  * per mezzo della variabile amount.
  * out = a + gauss_noise*amount
  * */
-ip_mat * ip_mat_corrupt(ip_mat * a, float amount);
+ip_mat * ip_mat_corrupt(ip_mat * a, float amount){
+    if(*a) {
+        ip_mat * corrupted;                                                                         // nuova matrice (copia)
+        unsigned int ih, iw, ik;                                                                // variabili per scorrere
+
+        corrupted = ip_mat_create(a->h, a->w, a->k, 0.0);                                           // creo una nuova ip_mat
+
+        for(ih = 0; ih < corrupted->h; ih++){
+            for(iw = 0; iw < corrupted->w; iw++){
+                for(ik = 0; ik < corrupted->k; ik++){
+                    corrupted->data[ih][iw][ik] = a->data[ih][iw][ik] + get_normal_random() * amount;  // calcolo la media dei valori
+                }                                                                               // presenti in *a e *b e li
+            }                                                                                   // inserisco in data
+        }
+
+        compute_stats(corrupted);                                                                   // calcolo le stats
+
+        return corrupted;                                                                           // fine
+
+    } else if(!*a) {
+        printf("Errore ip_mat_corrupt");
+        printf("\n");
+        printf("La matrice in ingresso non esiste");
+        exit(1);
+    }
+}
 
 /**** PARTE 3: CONVOLUZIONE E FILTRI *****/
 
