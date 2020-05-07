@@ -32,7 +32,7 @@ typedef struct {
  * Inoltre crea un vettore di stats per contenere le statische sui singoli canali.
  * */
 ip_mat * ip_mat_create(unsigned int h, unsigned int w, unsigned int k, float v) {
-    
+
     if(h != 0 && w != 0 && k != 0) {                                    // controllo se posso creare una matrice
         ip_mat * new_mat = (ip_mat *)malloc(sizeof(ip_mat));            // creo la nuova matrice
         float *** new_data;                                             // matrice 3D (data)
@@ -73,7 +73,7 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w, unsigned int k, float v) 
             printf("La malloc non è andata a buon fine");
             exit(1);
         }
-    
+
         for(ih = 0; ih < h; ih++) {
             new_data[ih] = (float **)malloc(sizeof(float *) * w);       // aggiungo dimensione lunghezza
 
@@ -191,7 +191,7 @@ void compute_stats(ip_mat * t) {
                         if(val > massimo) {
                             massimo = val;                              // (il contrario di sopra ↑)
                         }
-                    
+
                 }
             }
 
@@ -285,9 +285,9 @@ ip_mat * ip_mat_subset(ip_mat * t, unsigned int row_start, unsigned int row_end,
     if(*t && (row_start > 0 && row_start < t->h) && (row_end > 0 && row_end < t->h) && (col_start > 0 && col_start < t->w) && (col_end > 0 && col_end < t->w)){
         ip_mat * sub;                                                                   // nuova sotto-matrice
         unsigned int ih, iw, ik;                                                        // variabili per scorrere
-        
+
         sub = ip_mat_create(h - row_start, w - col_start, k, 0.0);                      // creo una nuova ip_mat
-        
+
         for(ih = row_start; ih < row_end; ih++){
             for(iw = col_start; iw < col_end; iw++){
                 for(ik = 0; ik < t->k; ik++){
@@ -592,7 +592,7 @@ ip_mat * ip_mat_to_gray_scale(ip_mat * in) {
             for(iw = 0; iw < scalaGrigi->w; iw++){
                 for(ik = 0; ik < scalaGrigi->k; ik++){
                     media += in->data[ih][iw][ik];  // calcolo la media dei valori
-                }                                                                               
+                }
                 media /= nCanali;
                 for(ik = 0; ik < scalaGrigi->k; ik++){
                    scalaGrigi->data[ih][iw][ik] = media;  // calcolo la media dei valori
@@ -713,6 +713,10 @@ ip_mat * ip_mat_corrupt(ip_mat * a, float amount){
  * La funzione restituisce un ip_mat delle stesse dimensioni di "a".
  * */
 ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f);
+    //funzione di base della parte 3, ma prima ha bisogno di usare ip_mat_padding
+
+
+
 
 /* Aggiunge un padding all'immagine. Il padding verticale è pad_h mentre quello
  * orizzontale è pad_w.
@@ -723,7 +727,37 @@ ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f);
  * con valori nulli sui bordi corrispondenti al padding e l'immagine "a" riportata
  * nel centro
  * */
-ip_mat * ip_mat_padding(ip_mat * a, int pad_h, int pad_w);
+ip_mat * ip_mat_padding(ip_mat * a, int pad_h, int pad_w){
+    if(*a){
+        ip_mat * padded;                                       //nuova matrice
+        unsigned int ih, iw, ik;                               //variabili scorrimento cicli
+        unsigned int ph, pw, pk;                               //nuove dimensioni
+
+        ph = a->h + 2*pad_h;                                   //calcolo dimensioni paddate
+        pw = a->w + 2*pad_w;
+        pk = a->k;
+
+        padded = ip_mat_create(ph, pw, pk, 0.0);               //creazione ip_mat paddata (vuota)
+
+        //copiatura matrice originale al centro della matrice paddata vuota
+        for (ih = pad_h; ih < padded -> h - pad_h; ih++){
+                for (iw = pad_w; iw < padded -> w - pad_h; iw++){
+                    for (ik = 0; ik < padded -> k; k++){
+                        padded -> data[ih][iw][ik] = a -> data[ih-pad_h][iw-pad_w][ik];
+                    }
+                }
+        }
+
+        compute_stats(padded);
+
+        return padded;
+    } else if (!*a) {
+        printf("Errore ip_mat_padding");
+        printf("\n");
+        printf("La matrice in ingresso non esiste");
+        exit(1);
+    }
+}
 
 /* Crea un filtro di sharpening */
 ip_mat * create_sharpen_filter();
