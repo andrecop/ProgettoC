@@ -31,23 +31,18 @@ typedef struct {
 /* Inizializza una ip_mat con dimensioni h w e k. Ogni elemento è inizializzato a v.
  * Inoltre crea un vettore di stats per contenere le statische sui singoli canali.
  * */
-ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned  int k, float v){
+ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned int k, float v){
     ip_mat * new_mat = (ip_mat*)malloc(sizeof(ip_mat));
-    stats new_stats[k];
     float ***new_data;
     unsigned int ih, iw, ik;
+    stats *new_stats;
 
     // inizializzo le varibili della matrice
     new_mat->h = h;     // altezza
     new_mat->w = w;     // lunghezza
     new_mat->k = k;     // n° canali
 
-    // inizializzo stats (anche se non credo serva, qui verrà chiamata la funzione che lo fa)
-    for(ik = 0; ik < k; ik++){
-        new_stats[ik].max = v;
-        new_stats[ik].min = v;
-        new_stats[ik].mean = v;
-    }
+    new_stats = (stats *)malloc(sizeof(stats)*k);
 
     new_data = (float ***)malloc(sizeof(float **) * h);             // creo matrice altezza
     for(ih = 0; ih < h; ih++){
@@ -60,8 +55,10 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned  int k, float v){
         }
     }
 
+
     new_mat->stat = new_stats;                                      // setto stat
     new_mat->data = new_data;                                       // e data
+    compute_stats(new_mat);
 
     return new_mat;                                                 // ritorno la matrice inizializzata
 }
@@ -69,12 +66,14 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned  int k, float v){
 /* Libera la memoria (data, stat e la struttura) */
 void ip_mat_free(ip_mat *a){
     //evitare di istanziare variabili inutili
-    int ih, iw;                     // variabili per scorrere
+    int ih, iw, ik;                     // variabili per scorrere
     int h = a->h;                   // recupero l'altezza
     int w = a->w;                   // recupero la lunghezza
     int k = a->k;                   // recupero il numero di canali
 
-    free(a->stat);                  // libero stat
+    for(ik=0; ik<k; ik++){
+        free(a->stat);                  // libero stat
+    }
 
     for(ih = 0; ih < h; ih++){
         for(iw = 0; iw < w; iw++){
@@ -106,31 +105,32 @@ void set_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k, float v){
 void compute_stats(ip_mat * t){
     //evitare di istanziare variabili inutili
     int ih, iw, ik;                         // variabili per scorrere
-    float val;                              // variabile per salvare il valore in "data"
+    float val = 0.0;                              // variabile per salvare il valore in "data"
     int h = t->h;                           // recupero l'altezza
     int w = t->w;                           // recupero la lunghezza
     int k = t->k;                           // recupero il numero di canali
     float minimo = FLT_MAX;                 // setto il minimo al max float
     float massimo = FLT_MIN;                // setto in massimo al min float
     float media;                            // qui calcolerò la media
-
-    for(ih = 0; ih < h; ih++){
-        for(iw = 0; iw < w; iw++){
-            for(ik = 0; ik < k; ik++){
-                val = t->data[ih][iw][ik];  // estraggo il valore
-                if(val < minimo)
-                    minimo = val;           // salvo il minimo (di sicuro sarà più piccolo di max float)
-                if(val > massimo)
-                    massimo = val;          // salvo il massimo (il contrario di sopra ↑)
+    for(ik = 0; ik < k; ik++){
+        for(ih = 0; ih < h; ih++){
+            for(iw = 0; iw < w; iw++){
+                
+                    val = t->data[ih][iw][ik];  // estraggo il valore
+                    if(val < minimo){
+                        minimo = val;           // salvo il minimo (di sicuro sarà più piccolo di max float)
+                    }
+                    if(val > massimo){
+                        massimo = val;          // salvo il massimo (il contrario di sopra ↑)
+                    }
+                
             }
         }
+        media = (massimo + minimo) / 2.0;         // calcolo la media
+        t->stat[ik].max = massimo;                 // setto il massimo
+        t->stat[ik].min = minimo;                  // il minimo
+        t->stat[ik].mean = media;                  // e la media
     }
-
-    media = (massimo + minimo) / 2;         // calcolo la media
-    t->stat->max = massimo;                 // setto il massimo
-    t->stat->min = minimo;                  // il minimo
-    t->stat->mean = media;                  // e la media
-
     return;                                 // fine
 }
 
