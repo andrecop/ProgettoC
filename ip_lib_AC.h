@@ -39,12 +39,25 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w, unsigned int k, float v) 
         unsigned int ih, iw, ik;                                        // variabili per scorrere la matrice 3D
         stats * new_stats;                                              // matrice di stats (3D, una dimensione per canale)
 
+        if(!*new_mat){
+            printf("Errore ip_mat_create");
+            printf("\n");
+            printf("La malloc non è andata a buon fine");
+            exit(1);
+        }
                                                                         // inizializzo le varibili della matrice
         new_mat->h = h;                                                 // altezza
         new_mat->w = w;                                                 // lunghezza
         new_mat->k = k;                                                 // n° canali
 
         new_stats = (stats *)malloc(sizeof(stats) * k);                 // creo la matrice di stats
+
+        if(!*new_stats){
+            printf("Errore ip_mat_create");
+            printf("\n");
+            printf("La malloc non è andata a buon fine");
+            exit(1);
+        }
 
         for(ik = 0; ik < k; ik++) {                                     // inizializzo stats
             new_stats[ik].max = v;                                      // creo il massimo
@@ -53,10 +66,34 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w, unsigned int k, float v) 
         }
                                                                         // inizializzo la matrice 3D
         new_data = (float ***)malloc(sizeof(float **) * h);             // creo matrice altezza
+
+        if(!***new_data){
+            printf("Errore ip_mat_create");
+            printf("\n");
+            printf("La malloc non è andata a buon fine");
+            exit(1);
+        }
+    
         for(ih = 0; ih < h; ih++) {
             new_data[ih] = (float **)malloc(sizeof(float *) * w);       // aggiungo dimensione lunghezza
+            
+            if(!**new_data[ih]){
+                printf("Errore ip_mat_create");
+                printf("\n");
+                printf("La malloc non è andata a buon fine");
+                exit(1);
+            }
+
             for(iw = 0; iw < w; iw++) {
                 new_data[ih][iw] = (float *)malloc(sizeof(float) * k);  // aggiungo i canali
+
+                if(!*new_data[ih][iw]){
+                    printf("Errore ip_mat_create");
+                    printf("\n");
+                    printf("La malloc non è andata a buon fine");
+                    exit(1);
+                }
+
                 for(ik = 0; ik < k; ik++) {
                     new_data[ih][iw][ik] = v;                           // setto il valore di default
                 }
@@ -96,7 +133,7 @@ void ip_mat_free(ip_mat *a) {
         free(a);                                                        // libero la matrice che conteneva tutto
 
         return;                                                         // fine
-        
+
     } else {
         printf("Errore ip_mat_free");
         printf("\n");
