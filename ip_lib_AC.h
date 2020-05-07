@@ -31,167 +31,210 @@ typedef struct {
 /* Inizializza una ip_mat con dimensioni h w e k. Ogni elemento è inizializzato a v.
  * Inoltre crea un vettore di stats per contenere le statische sui singoli canali.
  * */
-ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned int k, float v){
-    ip_mat * new_mat = (ip_mat*)malloc(sizeof(ip_mat));
-    float ***new_data;
-    unsigned int ih, iw, ik;
-    stats *new_stats;
+ip_mat * ip_mat_create(unsigned int h, unsigned int w, unsigned int k, float v) {
+    
+    if(h != 0 && w != 0 && k != 0) {                                    // controllo se posso creare una matrice
+        ip_mat * new_mat = (ip_mat *)malloc(sizeof(ip_mat));            // creo la nuova matrice
+        float *** new_data;                                             // matrice 3D (data)
+        unsigned int ih, iw, ik;                                        // variabili per scorrere la matrice 3D
+        stats * new_stats;                                              // matrice di stats (3D, una dimensione per canale)
 
-    // inizializzo le varibili della matrice
-    new_mat->h = h;     // altezza
-    new_mat->w = w;     // lunghezza
-    new_mat->k = k;     // n° canali
+                                                                        // inizializzo le varibili della matrice
+        new_mat->h = h;                                                 // altezza
+        new_mat->w = w;                                                 // lunghezza
+        new_mat->k = k;                                                 // n° canali
 
-    new_stats = (stats *)malloc(sizeof(stats)*k);
+        new_stats = (stats *)malloc(sizeof(stats) * k);                 // creo la matrice di stats
 
-    for(ik = 0; ik < k; ik++){
-        new_stats[ik].max = v;                 // copio in stat il massimo
-        new_stats[ik].min = v;                 // il minimo
-        new_stats[ik].mean = v;               // e la media (tanto son gli stessi)
-    }
-
-    new_data = (float ***)malloc(sizeof(float **) * h);             // creo matrice altezza
-    for(ih = 0; ih < h; ih++){
-        new_data[ih] = (float **)malloc(sizeof(float *) * w);       // aggiungo dimensione lunghezza
-        for(iw = 0; iw < w; iw++){
-            new_data[ih][iw] = (float *)malloc(sizeof(float) * k);  // aggiungo i canali
-            for(ik = 0; ik < k; ik++){
-                new_data[ih][iw][ik] = v;                           // setto il valore di default
+        for(ik = 0; ik < k; ik++) {                                     // inizializzo stats
+            new_stats[ik].max = v;                                      // creo il massimo
+            new_stats[ik].min = v;                                      // il minimo
+            new_stats[ik].mean = v;                                     // e la media
+        }
+                                                                        // inizializzo la matrice 3D
+        new_data = (float ***)malloc(sizeof(float **) * h);             // creo matrice altezza
+        for(ih = 0; ih < h; ih++) {
+            new_data[ih] = (float **)malloc(sizeof(float *) * w);       // aggiungo dimensione lunghezza
+            for(iw = 0; iw < w; iw++) {
+                new_data[ih][iw] = (float *)malloc(sizeof(float) * k);  // aggiungo i canali
+                for(ik = 0; ik < k; ik++) {
+                    new_data[ih][iw][ik] = v;                           // setto il valore di default
+                }
             }
         }
+
+        new_mat->stat = new_stats;                                      // collego stat
+        new_mat->data = new_data;                                       // e data
+
+        return new_mat;                                                 // ritorno la matrice inizializzata
+    } else {
+        printf("Errore ip_mat_create");
+        printf("\n");
+        printf("La matrice deve avere tre dimensioni");
+        exit(1);
     }
-
-
-    new_mat->stat = new_stats;                                      // setto stat
-    new_mat->data = new_data;                                       // e data
-
-    return new_mat;                                                 // ritorno la matrice inizializzata
 }
 
 /* Libera la memoria (data, stat e la struttura) */
-void ip_mat_free(ip_mat *a){
-    //evitare di istanziare variabili inutili
-    int ih, iw, ik;                     // variabili per scorrere
-    int h = a->h;                   // recupero l'altezza
-    int w = a->w;                   // recupero la lunghezza
-    int k = a->k;                   // recupero il numero di canali
+void ip_mat_free(ip_mat *a) {
 
-    for(ik=0; ik<k; ik++){
-        free(a->stat);                  // libero stat
-    }
+    if(*a) {                                                            // controllo che esista la matrice
+        int ih, iw, ik;                                                 // variabili per scorrere
 
-    for(ih = 0; ih < h; ih++){
-        for(iw = 0; iw < w; iw++){
-            free(a->data[ih][iw]);  // libero i canali per ciascuna lunghezza
+        for(ik=0; ik < a->k; ik++) {
+            free(a->stat);                                              // libero i canali di stat
         }
-        free(a->data[ih]);          // libero la lunghezza per ciascuna altezza
+
+        for(ih = 0; ih < a->h; ih++) {
+            for(iw = 0; iw < a->w; iw++) {
+                free(a->data[ih][iw]);                                  // libero i canali per ciascuna lunghezza
+            }
+            free(a->data[ih]);                                          // libero la lunghezza per ciascuna altezza
+        }
+
+        free(a->data);                                                  // libero l'altezza
+        free(a);                                                        // libero la matrice che conteneva tutto
+
+        return;                                                         // fine
+        
+    } else {
+        printf("Errore ip_mat_free");
+        printf("\n");
+        printf("La matrice non esiste");
+        exit(1);
     }
-
-    free(a->data);                  // libero l'altezza
-    free(a);                        // libero la matrice che conteneva tutto
-
-    return;                         // fine
 }
 
 /* Restituisce il valore in posizione i,j,k */
-float get_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k){
-    return a->data[i][j][k];
+float get_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k) {
+
+    if((i > 0 && i < a->h) && (j > 0 && j < a->w) && (k > 0 && k < a->k)) {                              // controllo che la posizione abbia senso
+        return a->data[i][j][k];                                        // restituisco il valore
+    } else {
+        printf("Errore get_val");
+        printf("\n");
+        printf("Le posizioni in ingresso non rientrano nella matrice");
+        exit(1);
+    }
 }
 
 /* Setta il valore in posizione i,j,k a v*/
-void set_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k, float v){
-    a->data[i][j][k] = v;
-    return;
+void set_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k, float v) {
+
+    if((i > 0 && i < a->h) && (j > 0 && j < a->w) && (k > 0 && k < a->k)) {                              // controllo che la posizione abbia senso
+        a->data[i][j][k] = v;                                           // setto il valore
+        return;
+    } else {
+        printf("Errore set_val");
+        printf("\n");
+        printf("Le posizioni in ingresso non rientrano nella matrice");
+        exit(1);
+    }
 }
 
 /* Calcola il valore minimo, il massimo e la media per ogni canale
  * e li salva dentro la struttura ip_mat stats
  * */
-void compute_stats(ip_mat * t){
-    //evitare di istanziare variabili inutili
-    int ih, iw, ik;                         // variabili per scorrere
-    float val = 0.0;                              // variabile per salvare il valore in "data"
-    int h = t->h;                           // recupero l'altezza
-    int w = t->w;                           // recupero la lunghezza
-    int k = t->k;                           // recupero il numero di canali
-    float minimo = FLT_MAX;                 // setto il minimo al max float
-    float massimo = FLT_MIN;                // setto in massimo al min float
-    float media;                            // qui calcolerò la media
-    for(ik = 0; ik < k; ik++){
-        for(ih = 0; ih < h; ih++){
-            for(iw = 0; iw < w; iw++){
-                
-                    val = t->data[ih][iw][ik];  // estraggo il valore
-                    if(val < minimo){
-                        minimo = val;           // salvo il minimo (di sicuro sarà più piccolo di max float)
-                    }
-                    if(val > massimo){
-                        massimo = val;          // salvo il massimo (il contrario di sopra ↑)
-                    }
-                
+void compute_stats(ip_mat * t) {
+
+    if(*a) {                                                            // controllo che esista la matrice
+        int ih, iw, ik;                                                 // variabili per scorrere la matrice 3D
+        float val;                                                      // variabile per salvare il valore in "data"
+        float minimo = FLT_MAX;                                         // setto il minimo al max float per cercare valori più piccoli
+        float massimo = FLT_MIN;                                        // (il contrario di sopra ↑)
+        float media;                                                    // qui calcolerò la media
+
+        for(ik = 0; ik < t->k; ik++) {
+            for(ih = 0; ih < t->h; ih++) {
+                for(iw = 0; iw < t->w; iw++) {
+                        val = t->data[ih][iw][ik];                      // estraggo il valore
+                        if(val < minimo) {
+                            minimo = val;                               // salvo il minimo (di sicuro sarà più piccolo di max float)
+                        }
+                        if(val > massimo) {
+                            massimo = val;                              // (il contrario di sopra ↑)
+                        }
+                    
+                }
             }
+
+            media = (massimo + minimo) / 2.0;                           // calcolo la media
+            t->stat[ik].max = massimo;                                  // setto il massimo
+            t->stat[ik].min = minimo;                                   // il minimo
+            t->stat[ik].mean = media;                                   // e la media
         }
-        media = (massimo + minimo) / 2.0;         // calcolo la media
-        t->stat[ik].max = massimo;                 // setto il massimo
-        t->stat[ik].min = minimo;                  // il minimo
-        t->stat[ik].mean = media;                  // e la media
+
+        return;                                                         // fine
+    } else {
+        printf("Errore compute_stats");
+        printf("\n");
+        printf("La matrice non esiste");
+        exit(1);
     }
-    return;                                 // fine
 }
-
-/*----------------------------------------------------------------------------------------------
-                                       ↓ DA FARE ↓
------------------------------------------------------------------------------------------------*/
-
 
 /* Inizializza una ip_mat con dimensioni w h e k.
  * Ogni elemento è generato da una gaussiana con media mean e varianza var */
-void ip_mat_init_random(ip_mat * t, float mean, float var){
-    //evitare di istanziare variabili inutili
-    unsigned int h, w, k;                                               // variabili per salvare dimensioni matrice 3D
-    unsigned int ih, iw, ik;                                            // variabili per scorrere
-    h = t->h;                                                           // recupero l'altezza
-    w = t->w;                                                           // recupero la lunghezza
-    k = t->k;                                                           // recupero il numero di canali
+void ip_mat_init_random(ip_mat * t, float mean, float var) {
+                                                                            // controllo che esista la matrice
+    if(*t && (var > 0 || var < 0)) {                                        // e che la varianza non sia nulla
+        unsigned int ih, iw, ik;                                            // variabili per scorrere
 
-    for(ih = 0; ih < h; ih++){
-        for(iw = 0; iw < w; iw++){
-            for(ik = 0; ik < k; ik++){
-                t->data[ih][iw][ik] = get_normal_random() * var + mean; // creo i valori
+        for(ih = 0; ih < t->h; ih++) {
+            for(iw = 0; iw < t->w; iw++) {
+                for(ik = 0; ik < t->k; ik++) {
+                    t->data[ih][iw][ik] = get_normal_random() * var + mean; // genero i valori
+                }
             }
         }
-    }
 
-    compute_stats(t);
-    return;
+        compute_stats(t);                                                   // calcolo le stats
+        return;                                                             // fine
+
+    } else if (var == 0) {
+        printf("Errore ip_mat_init_random");
+        printf("\n");
+        printf("La varianza non può essere nulla");
+        exit(1);
+    } else {
+        printf("Errore ip_mat_init_random");
+        printf("\n");
+        printf("La matrice non esiste");
+        exit(1);
+    }
 }
 
 
 /* Crea una copia di una ip_mat e lo restituisce in output */
 ip_mat * ip_mat_copy(ip_mat * in){
-    //evitare di istanziare variabili inutili
-    ip_mat * copia;                                             // nuova matrice (copia)
-    unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
-    unsigned int ih, iw, ik;                                    // variabili per scorrere
-    h = in->h;                                                  // recupero l'altezza
-    w = in->w;                                                  // recupero la lunghezza
-    k = in->k;                                                  // recupero il numero di canali
+    if(*a) {                                                            // controllo che esista la matrice
+        ip_mat * copia;                                                 // nuova matrice (copia)
+        unsigned int ih, iw, ik;                                        // variabili per scorrere
 
-    copia = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+        copia = ip_mat_create(h, w, k, 0.0);                            // creo una nuova ip_mat
 
-    for(ih = 0; ih < h; ih++){
-        for(iw = 0; iw < w; iw++){
-            for(ik = 0; ik < k; ik++){
-                copia->data[ih][iw][ik] = in->data[ih][iw][ik]; // copio i valori di data
+        for(ih = 0; ih < in->h; ih++){
+            for(iw = 0; iw < in->w; iw++){
+                for(ik = 0; ik < in->k; ik++){
+                    copia->data[ih][iw][ik] = in->data[ih][iw][ik];     // copio i valori di data
+                }
             }
         }
+
+        for(ik = 0; ik < in->k; ik++){
+            copia->stat[ik].max = in->stat[ik].max;                     // copio in stat il massimo
+            copia->stat[ik].min = in->stat[ik].min;                     // il minimo
+            copia->stat[ik].mean = in->stat[ik].mean;                   // e la media
+        }
+
+        return copia;                                                   // fine
+
+    } else {
+        printf("Errore ip_mat_copy");
+        printf("\n");
+        printf("La matrice non esiste");
+        exit(1);
     }
-    for(ik = 0; ik < k; ik++){
-        copia->stat[ik].max = in->stat[ik].max;                 // copio in stat il massimo
-        copia->stat[ik].min = in->stat[ik].min;                 // il minimo
-        copia->stat[ik].mean = in->stat[ik].mean;               // e la media (tanto son gli stessi)
-    }
-    return copia;                                               // fine
 }
 
 /* Restituisce una sotto-matrice, ovvero la porzione individuata da:
@@ -200,52 +243,37 @@ ip_mat * ip_mat_copy(ip_mat * in){
  * delle righe e delle colonne.
  * */
 ip_mat * ip_mat_subset(ip_mat * t, unsigned int row_start, unsigned int row_end, unsigned int col_start, unsigned int col_end){
-    //manca verifica indici (range)
-    //snellire evitando di istanziare variabili (che sarebbe inutile)
 
-    ip_mat * sub;                                             // nuova matrice (copia)
-
-    /*
-    float *** data;
-    float ** dataH;
-    float * dataW;
-    */
-
-    unsigned int h, w, k;                        // variabili per dimensioni matrice 3D
-    unsigned int ih, iw, ik;                                    // variabili per scorrere
-    h = row_end;                                                  // recupero l'altezza
-    w = col_end;                                                  // recupero la lunghezza
-    k = t->k;                                                  // recupero il numero di canali
-    
-    sub = ip_mat_create(h - row_start, w - col_start, k, 0.0);                        // creo una nuova ip_mat
-    
-    for(ih = row_start; ih < h; ih++){
-        for(iw = col_start; iw < w; iw++){
-            for(ik = 0; ik < k; ik++){
-                sub->data[ih-row_start][iw-col_start][ik] = t->data[ih][iw][ik]; // copio i valori di data
+    // controllo la matrice esista e che row e col (sia start che end) siano all'interno della matrice in ingresso
+    if(*t && (row_start > 0 && row_start < t->h) && (row_end > 0 && row_end < t->h) && (col_start > 0 && col_start < t->w) && (col_end > 0 && col_end < t->w)){
+        ip_mat * sub;                                                                   // nuova sotto-matrice
+        unsigned int ih, iw, ik;                                                        // variabili per scorrere
+        
+        sub = ip_mat_create(h - row_start, w - col_start, k, 0.0);                      // creo una nuova ip_mat
+        
+        for(ih = row_start; ih < row_end; ih++){
+            for(iw = col_start; iw < col_end; iw++){
+                for(ik = 0; ik < t->k; ik++){
+                    sub->data[ih-row_start][iw-col_start][ik] = t->data[ih][iw][ik];    // copio i valori di data
+                }
             }
         }
+
+        compute_stats(sub);                                                             // calcolo le stats
+
+        return sub;                                                                     // fine
+
+    } else if (*t) {
+        printf("Errore ip_mat_subset");
+        printf("\n");
+        printf("Le posizioni in ingresso non sono presenti all'interno della matrice");
+        exit(1);
+    } else {
+        printf("Errore ip_mat_subset");
+        printf("\n");
+        printf("La matrice in ingresso non esiste");
+        exit(1);
     }
-
-    compute_stats(sub);
-    
-    /*
-    QUANTO SCRITTO SOTTO E' SOLO UN'IDEA PER NON CREARE UNA NUOVA MATRICE, DA TESTARE!
-
-    sub->h=row_end-row_start;
-    sub->w=col_end-col_start;
-    sub->k=t->k;
-    
-    dataW=&(t->data[row_start][col_start]);
-    dataH=&(dataW[row_start]);
-    data=&(dataH);
-
-    sub->data=data;
-
-    compute_stats(sub);
-    */
-
-    return sub;
 }
 
 /* Concatena due ip_mat su una certa dimensione.
@@ -269,202 +297,243 @@ ip_mat * ip_mat_subset(ip_mat * t, unsigned int row_start, unsigned int row_end,
  *      out.k = a.k + b.k
  * */
 ip_mat * ip_mat_concat(ip_mat * a, ip_mat * b, int dimensione){
-    // mancano controlli dimensioni
-    //evitare di istanziare variabili inutili
-    //migliorare il codice (abbozzato)
-    //soprattutto la parte degli if e dei for
-    ip_mat * concat;                                             // nuova matrice (copia)
-    unsigned int h, w, k, ha, wa, ka, hb, wb, kb;                                       // variabili per salvare dimensioni matrice 3D
-    unsigned int ih, iw, ik;                                    // variabili per scorrere
-    ha = a->h;                                                  // recupero l'altezza
-    wa = a->w;                                                  // recupero la lunghezza
-    ka = a->k;                                                  // recupero il numero di canali
-    hb = b->h;                                                  // recupero l'altezza
-    wb = b->w;                                                  // recupero la lunghezza
-    kb = b->k;                                                  // recupero il numero di canali
 
-    h=ha;
-    w=wa;
-    k=ka;
-    
-    if(dimensione == 0){
-        h = ha + hb;
-    } else if(dimensione == 1){
-        w = wa + wb;
-    } else if(dimensione == 2){
-        k = ka + kb;
+    if(*a && *b && (dimensione < 3 && dimensione >= 0)) {
+
+        ip_mat * concat;                                                                // nuova matrice
+        unsigned int ih, iw, ik;                                                        // variabili per scorrere la matrice 3D
+        unsigned int h, w, k;                                                           // dimensioni della nuova matrice
+
+        h = a->h;                                                                       // altezza
+        w = a->w;                                                                       // larghezza
+        k = a->k;                                                                       // numero di canali
+
+                                                                                        // concateno
+        if(dimensione == 0) {
+            h = a->h + b->h;                                                            // correggo l'altezza
+        } else if(dimensione == 1) {
+            w = a->w + b->w;                                                            // correggo la larghezza
+        } else if(dimensione == 2) {
+            k = a->k + b->k;                                                            // correggo il numero di canali
+        }
+
+        concat = ip_mat_create(h, w, k, 0.0);                                           // creo una nuova ip_mat
+                                                                                        // con le dimensioni corrette
+
+        for(ih = 0; ih < h; ih++) {
+            for(iw = 0; iw < w; iw++) {
+                for(ik = 0; ik < k; ik++) {
+                    if(dimensione == 0) {                                               // concateno altezza
+                        if(ih < a->h) {
+                            concat->data[ih][iw][ik] = a->data[ih][iw][ik];             // copio i valori di *a
+                        } else {
+                            concat->data[ih][iw][ik] = b->data[ih-a->h][iw][ik];        // copio i valori di *b
+                        }
+                    } else if (dimensione == 1) {                                       // concateno lunghezza
+                        if(iw < a->w) {
+                            concat->data[ih][iw][ik] = a->data[ih][iw][ik];             // copio i valori di *a
+                        } else {
+                            concat->data[ih][iw][ik] = b->data[ih][iw-a->w][ik];        // copio i valori di *b
+                        }
+                    } else if (dimensione == 2) {                                       // concateno canali
+                        if(ik < a->k) {
+                            concat->data[ih][iw][ik] = a->data[ih][iw][ik];             // copio i valori di *a
+                        } else {
+                            concat->data[ih][iw][ik] = a->data[ih][iw][ik-a->k];        // copio i valori di *b
+                        }
+                    }
+                }
+            }
+        }
+
+        compute_stats(concat);                                                          // calcolo le stats
+
+        return concat;                                                                  // fine
+
+    } else if(!*a) {
+        printf("Errore ip_mat_concat");
+        printf("\n");
+        printf("La matrice *a non esiste");
+        exit(1);
+    } else if(!*b) {
+        printf("Errore ip_mat_concat");
+        printf("\n");
+        printf("La matrice *b non esiste");
+        exit(1);
+    } else {
+        printf("Errore ip_mat_concat");
+        printf("\n");
+        printf("La dimensione deve essere compresa fra 0 e 2");
+        exit(1);
     }
-
-    concat = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
-
-    if(dimensione == 0){
-        for(ih = 0; ih < ha; ih++){
-            for(iw = 0; iw < w; iw++){
-                for(ik = 0; ik < k; ik++){
-                    concat->data[ih][iw][ik] = a->data[ih][iw][ik]; // copio i valori di data
-                }
-            }
-        }
-        for(ih = ha; ih < h; ih++){
-            for(iw = 0; iw < w; iw++){
-                for(ik = 0; ik < k; ik++){
-                    concat->data[ih][iw][ik] = a->data[ih-ha][iw][ik]; // copio i valori di data
-                }
-            }
-        }
-    } else if(dimensione == 1){
-        for(ih = 0; ih < h; ih++){
-            for(iw = 0; iw < wa; iw++){
-                for(ik = 0; ik < k; ik++){
-                    concat->data[ih][iw][ik] = a->data[ih][iw][ik]; // copio i valori di data
-                }
-            }
-            for(iw = wa; iw < w; iw++){
-                for(ik = 0; ik < k; ik++){
-                    concat->data[ih][iw][ik] = a->data[ih][iw-wa][ik]; // copio i valori di data
-                }
-            }
-        }
-    } else if(dimensione == 2){
-        for(ih = 0; ih < h; ih++){
-            for(iw = 0; iw < w; iw++){
-                for(ik = 0; ik < ka; ik++){
-                    concat->data[ih][iw][ik] = a->data[ih][iw][ik]; // copio i valori di data
-                }
-                for(ik = ka; ik < k; ik++){
-                    concat->data[ih][iw][ik] = a->data[ih][iw][ik-ka]; // copio i valori di data
-                }
-            }
-        }
-    }
-    compute_stats(concat);
-
-    return concat;                                               // fine
 }
 
 /**** PARTE 1: OPERAZIONI MATEMATICHE FRA IP_MAT ****/
 /* Esegue la somma di due ip_mat (tutte le dimensioni devono essere identiche)
  * e la restituisce in output. */
 ip_mat * ip_mat_sum(ip_mat * a, ip_mat * b){
-    //controllo dimensioni identiche in ingresso
-    //evitare di istanziare variabili inutili
-    ip_mat * somma;                                             // nuova matrice (copia)
-    unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
-    unsigned int ih, iw, ik;                                    // variabili per scorrere
-    h = a->h;                                                  // recupero l'altezza
-    w = a->w;                                                  // recupero la lunghezza
-    k = a->k;                                                  // recupero il numero di canali
 
-    somma = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+    if(*a && *b && (a->h == b->h) && (a->w == b->w) && (a->k == b->k)) {
+        ip_mat * somma;                                                                     // nuova matrice
+        unsigned int ih, iw, ik;                                                            // variabili per scorrere la matrice 3D
 
-    for(ih = 0; ih < h; ih++){
-        for(iw = 0; iw < w; iw++){
-            for(ik = 0; ik < k; ik++){
-                somma->data[ih][iw][ik] = a->data[ih][iw][ik] + b->data[ih][iw][ik]; // copio i valori di data
+        somma = ip_mat_create(a->h, a->w, a->k, 0.0);                                       // creo una nuova ip_mat
+
+        for(ih = 0; ih < somma->h; ih++){
+            for(iw = 0; iw < somma->w; iw++){
+                for(ik = 0; ik < somma->k; ik++){
+                    somma->data[ih][iw][ik] = a->data[ih][iw][ik] + b->data[ih][iw][ik];    // sommo i valori e li inserisco in data
             }
         }
+
+        compute_stats(somma);                                                               // calcolo le stats
+
+        return somma;                                                                       // fine
+
+    } else if(!*a) {
+        printf("Errore ip_mat_sum");
+        printf("\n");
+        printf("La matrice *a non esiste");
+        exit(1);
+    } else if(!*b) {
+        printf("Errore ip_mat_sum");
+        printf("\n");
+        printf("La matrice *b non esiste");
+        exit(1);
+    } else {
+        printf("Errore ip_mat_sum");
+        printf("\n");
+        printf("Le matrici devono avere le stesse dimensioni");
+        exit(1);
     }
-    compute_stats(somma);
-    return somma;                                               // fine
 }
 
 /* Esegue la sottrazione di due ip_mat (tutte le dimensioni devono essere identiche)
  * e la restituisce in output.
  * */
 ip_mat * ip_mat_sub(ip_mat * a, ip_mat * b){
-    //controllo dimensioni identiche in ingresso
-    //evitare di istanziare variabili inutili
-    ip_mat * sottrazione;                                             // nuova matrice (copia)
-    unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
-    unsigned int ih, iw, ik;                                    // variabili per scorrere
-    h = a->h;                                                  // recupero l'altezza
-    w = a->w;                                                  // recupero la lunghezza
-    k = a->k;                                                  // recupero il numero di canali
 
-    sottrazione = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+    if(*a && *b && (a->h == b->h) && (a->w == b->w) && (a->k == b->k)) {
+        ip_mat * sottrazione;                                                                   // nuova matrice (copia)
+        unsigned int ih, iw, ik;                                                                // variabili per scorrere
 
-    for(ih = 0; ih < h; ih++){
-        for(iw = 0; iw < w; iw++){
-            for(ik = 0; ik < k; ik++){
-                sottrazione->data[ih][iw][ik] = a->data[ih][iw][ik] - b->data[ih][iw][ik]; // copio i valori di data
+        sottrazione = ip_mat_create(a->h, a->w, a->k, 0.0);                                     // creo una nuova ip_mat
+
+        for(ih = 0; ih < sottrazione->h; ih++){
+            for(iw = 0; iw < sottrazione->w; iw++){
+                for(ik = 0; ik < sottrazione->k; ik++){
+                    sottrazione->data[ih][iw][ik] = a->data[ih][iw][ik] - b->data[ih][iw][ik];  // sottraggo i valori e li inserisco in data
+                }
             }
         }
+
+        compute_stats(sottrazione);                                                             // calcolo le stats
+        return sottrazione;                                                                     // fine
+
+    } else if(!*a) {
+        printf("Errore ip_mat_sub");
+        printf("\n");
+        printf("La matrice *a non esiste");
+        exit(1);
+    } else if(!*b) {
+        printf("Errore ip_mat_sub");
+        printf("\n");
+        printf("La matrice *b non esiste");
+        exit(1);
+    } else {
+        printf("Errore ip_mat_sub");
+        printf("\n");
+        printf("Le matrici devono avere le stesse dimensioni");
+        exit(1);
     }
-    compute_stats(sottrazione);
-    return sottrazione;   
 }
 
 /* Moltiplica un ip_mat per uno scalare c. Si moltiplica c per tutti gli elementi di "a"
  * e si salva il risultato in un nuovo tensore in output. */
 ip_mat * ip_mat_mul_scalar(ip_mat *a, float c){
-    //controllo dimensioni identiche in ingresso
-    //evitare di istanziare variabili inutili
-    ip_mat * moltiplicaScalare;                                             // nuova matrice (copia)
-    unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
-    unsigned int ih, iw, ik;                                    // variabili per scorrere
-    h = a->h;                                                  // recupero l'altezza
-    w = a->w;                                                  // recupero la lunghezza
-    k = a->k;                                                  // recupero il numero di canali
 
-    moltiplicaScalare = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+    if(*a) {
+        ip_mat * moltiplicaScalare;                                                 // nuova matrice (copia)
+        unsigned int ih, iw, ik;                                                    // variabili per scorrere
 
-    for(ih = 0; ih < h; ih++){
-        for(iw = 0; iw < w; iw++){
-            for(ik = 0; ik < k; ik++){
-                moltiplicaScalare->data[ih][iw][ik] = a->data[ih][iw][ik] * c; // copio i valori di data
+        moltiplicaScalare = ip_mat_create(a->h, a->w, a->k, 0.0);                   // creo una nuova ip_mat
+
+        for(ih = 0; ih < moltiplicaScalare->h; ih++){
+            for(iw = 0; iw < moltiplicaScalare->w; iw++){
+                for(ik = 0; ik < moltiplicaScalare->k; ik++){
+                    moltiplicaScalare->data[ih][iw][ik] = a->data[ih][iw][ik] * c;  // moltiplico i valori di *a per lo scalare c
+                }                                                                   // e li inserisco in data
             }
         }
+        compute_stats(moltiplicaScalare);                                           // calcolo le stats
+        return moltiplicaScalare;                                                   // fine
+
+    } else {
+        printf("Errore ip_mat_mul_scalar");
+        printf("\n");
+        printf("La matrice in ingresso non esiste");
+        exit(1);
     }
-    compute_stats(moltiplicaScalare);
-    return moltiplicaScalare;   
 }
 
 /* Aggiunge ad un ip_mat uno scalare c e lo restituisce in un nuovo tensore in output. */
 ip_mat *  ip_mat_add_scalar(ip_mat *a, float c){
-    //controllo dimensioni identiche in ingresso
-    //evitare di istanziare variabili inutili
-    ip_mat * sommaScalare;                                             // nuova matrice (copia)
-    unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
-    unsigned int ih, iw, ik;                                    // variabili per scorrere
-    h = a->h;                                                  // recupero l'altezza
-    w = a->w;                                                  // recupero la lunghezza
-    k = a->k;                                                  // recupero il numero di canali
 
-    sommaScalare = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+    if(*a) {
+        ip_mat * sommaScalare;                                                  // nuova matrice (copia)
+        unsigned int ih, iw, ik;                                                // variabili per scorrere
 
-    for(ih = 0; ih < h; ih++){
-        for(iw = 0; iw < w; iw++){
-            for(ik = 0; ik < k; ik++){
-                sommaScalare->data[ih][iw][ik] = a->data[ih][iw][ik] + c; // copio i valori di data
+        sommaScalare = ip_mat_create(a->h, a->w, a->k, 0.0);                    // creo una nuova ip_mat
+
+        for(ih = 0; ih < sommaScalare->h; ih++){
+            for(iw = 0; iw < sommaScalare->w; iw++){
+                for(ik = 0; ik < sommaScalare->k; ik++){
+                    sommaScalare->data[ih][iw][ik] = a->data[ih][iw][ik] + c;   // sommo i valori di *a per lo scalare c
+                }                                                               // e li inserisco in data
             }
         }
+        compute_stats(sommaScalare);                                            // calcolo le stats
+        return sommaScalare;                                                    // fine
+
+    } else {
+        printf("Errore ip_mat_add_scalar");
+        printf("\n");
+        printf("La matrice in ingresso non esiste");
+        exit(1);
     }
-    compute_stats(sommaScalare);
-    return sommaScalare;   
 }
 
 /* Calcola la media di due ip_mat a e b e la restituisce in output.*/
 ip_mat * ip_mat_mean(ip_mat * a, ip_mat * b){
-    //controllo dimensioni identiche in ingresso
-    //evitare di istanziare variabili inutili
-    ip_mat * media;                                             // nuova matrice (copia)
-    unsigned int h, w, k;                                       // variabili per salvare dimensioni matrice 3D
-    unsigned int ih, iw, ik;                                    // variabili per scorrere
-    h = a->h;                                                  // recupero l'altezza
-    w = a->w;                                                  // recupero la lunghezza
-    k = a->k;                                                  // recupero il numero di canali
+    if(*a && *b) {
+        ip_mat * media;                                                                         // nuova matrice (copia)
+        unsigned int ih, iw, ik;                                                                // variabili per scorrere
 
-    media = ip_mat_create(h, w, k, 0.0);                        // creo una nuova ip_mat
+        media = ip_mat_create(a->h, a->w, a->k, 0.0);                                           // creo una nuova ip_mat
 
-    for(ih = 0; ih < h; ih++){
-        for(iw = 0; iw < w; iw++){
-            for(ik = 0; ik < k; ik++){
-                media->data[ih][iw][ik] = (a->data[ih][iw][ik] + b->data[ih][iw][ik]) / 2; // copio i valori di data
-            }
+        for(ih = 0; ih < media->h; ih++){
+            for(iw = 0; iw < media->w; iw++){
+                for(ik = 0; ik < media->k; ik++){
+                    media->data[ih][iw][ik] = (a->data[ih][iw][ik] + b->data[ih][iw][ik]) / 2;  // calcolo la media dei valori
+                }                                                                               // presenti in *a e *b e li
+            }                                                                                   // inserisco in data
         }
+
+        compute_stats(media);                                                                   // calcolo le stats
+
+        return media;                                                                           // fine
+
+    } else if(!*a) {
+        printf("Errore ip_mat_mean");
+        printf("\n");
+        printf("La matrice *a non esiste");
+        exit(1);
+    } else {
+        printf("Errore ip_mat_mean");
+        printf("\n");
+        printf("La matrice *b non esiste");
+        exit(1);
     }
-    compute_stats(media);
-    return media;   
 }
 
 /**** PARTE 2: SEMPLICI OPERAZIONI SU IMMAGINI ****/
