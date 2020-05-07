@@ -44,6 +44,12 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned int k, float v){
 
     new_stats = (stats *)malloc(sizeof(stats)*k);
 
+    for(ik = 0; ik < k; ik++){
+        new_stats[ik].max = v;                 // copio in stat il massimo
+        new_stats[ik].min = v;                 // il minimo
+        new_stats[ik].mean = v;               // e la media (tanto son gli stessi)
+    }
+
     new_data = (float ***)malloc(sizeof(float **) * h);             // creo matrice altezza
     for(ih = 0; ih < h; ih++){
         new_data[ih] = (float **)malloc(sizeof(float *) * w);       // aggiungo dimensione lunghezza
@@ -58,7 +64,6 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w,unsigned int k, float v){
 
     new_mat->stat = new_stats;                                      // setto stat
     new_mat->data = new_data;                                       // e data
-    compute_stats(new_mat);
 
     return new_mat;                                                 // ritorno la matrice inizializzata
 }
