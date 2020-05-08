@@ -169,34 +169,58 @@ void set_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k, float v) 
     }
 }
 
+void compute_stats_channel(ip_mat * t, int k, float * minimo, float * massimo, float * somma_valori, unsigned int * quantita_valori){
+    if(*t && k > 0 && k < t->k) {
+        int ih, iw;                                                         // variabili per scorrere la matrice 3D
+        float val;                                                          // variabile per salvare il valore in "data"
+        for(ih = 0; ih < t->h; ih++) {
+            for(iw = 0; iw < t->w; iw++) {
+                val = t->data[ih][iw][k];                                   // estraggo il valore
+                *somma_valori += val;                                       // salvo la somma di tutti i valori
+                *quantita_valori++;                                         // conto quanti valori ci sono nel canale
+                if(val < *minimo) {
+                    *minimo = val;                                          // salvo il minimo (di sicuro sarà più piccolo di max float)
+                }
+                if(val > *massimo) {
+                    *massimo = val;                                         // (il contrario di sopra ↑)
+                }
+            }
+        }
+        return;                                                             // fine
+    } else if(!*t) {
+        printf("Errore compute_stats_channel");
+        printf("\n");
+        printf("La matrice non esiste");
+        exit(1);
+    } else {
+        printf("Errore compute_stats_channel");
+        printf("\n");
+        printf("Il canale non è presente nella matrice");
+        exit(1);
+    }
+} 
+
 /* Calcola il valore minimo, il massimo e la media per ogni canale
  * e li salva dentro la struttura ip_mat stats
  * */
 void compute_stats(ip_mat * t) {
 
-    if(*a) {                                                            // controllo che esista la matrice
+    if(*t) {                                                            // controllo che esista la matrice
         int ih, iw, ik;                                                 // variabili per scorrere la matrice 3D
-        float val;                                                      // variabile per salvare il valore in "data"
-        float minimo = FLT_MAX;                                         // setto il minimo al max float per cercare valori più piccoli
-        float massimo = FLT_MIN;                                        // (il contrario di sopra ↑)
-        float media;                                                    // qui calcolerò la media
+        float somma_valori;                                             // variabile per conteggiare la somma dei valori per canale
+        unsigned int quantita_valori;                                   // variabile per conteggiare i valori per canale
+        float minimo;                                                   // variabile per conteggiare il minimo
+        float massimo;                                                  // variabile per conteggiare il massimo
+        float media;                                                    // variabile per conteggiare la media
 
         for(ik = 0; ik < t->k; ik++) {
-            for(ih = 0; ih < t->h; ih++) {
-                for(iw = 0; iw < t->w; iw++) {
-                        val = t->data[ih][iw][ik];                      // estraggo il valore
-                        if(val < minimo) {
-                            minimo = val;                               // salvo il minimo (di sicuro sarà più piccolo di max float)
-                        }
-                        if(val > massimo) {
-                            massimo = val;                              // (il contrario di sopra ↑)
-                        }
-
-                }
-            }
-
-            media = (massimo + minimo) / 2.0;                           // calcolo la media
-            t->stat[ik].max = massimo;                                  // setto il massimo
+            minimo = FLT_MAX;                                           // setto a MAX FLOAT per cercare valori sempre più piccoli
+            massimo = FLT_MIN;                                          // setto a MIN FLOAT per cercare valori sempre più grandi
+            somma_valori = 0;                                           // inizializzo
+            quantita_valori = 0;                                        // inizializzo
+            compute_stats_channel(t, ik, &minimo, &massimo, &somma_valori, &quantita_valori);
+            media = somma_valori / (float)quantita_valori;              // calcolo la media
+            t->stat[ik].max = massimo;                                  // setto in *t il massimo
             t->stat[ik].min = minimo;                                   // il minimo
             t->stat[ik].mean = media;                                   // e la media
         }
@@ -244,7 +268,7 @@ void ip_mat_init_random(ip_mat * t, float mean, float var) {
 
 /* Crea una copia di una ip_mat e lo restituisce in output */
 ip_mat * ip_mat_copy(ip_mat * in){
-    if(*a) {                                                            // controllo che esista la matrice
+    if(*in) {                                                            // controllo che esista la matrice
         ip_mat * copia;                                                 // nuova matrice (copia)
         unsigned int ih, iw, ik;                                        // variabili per scorrere
 
@@ -580,7 +604,7 @@ ip_mat * ip_mat_mean(ip_mat * a, ip_mat * b){
  * Avremo quindi che tutti i canali saranno uguali.
  * */
 ip_mat * ip_mat_to_gray_scale(ip_mat * in) {
-    if(*a) {
+    if(*in) {
         ip_mat * scalaGrigi;                                                                    // nuova matrice
         unsigned int ih, iw, ik;                                                                // variabili per scorrere
         float media = 0.0;                                                                      // media
