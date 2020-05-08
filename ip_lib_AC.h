@@ -736,11 +736,24 @@ ip_mat * ip_mat_corrupt(ip_mat * a, float amount){
 /* Effettua la convoluzione di un ip_mat "a" con un ip_mat "f".
  * La funzione restituisce un ip_mat delle stesse dimensioni di "a".
  * */
-ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f);
-    //funzione di base della parte 3, ma prima ha bisogno di usare ip_mat_padding
-        //TODO: controllo a/f != NULL; padding a (richiede calcolo padding basato su w/h di f)
+ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f){                           //TODO: da completare e testare, aggiunta qualche struttura base
+    //TODO: calcolo valori da a paddata con il filtro
+    if(*a && *f){
+            int pad_h, pad_w;                                               //interi richiesti da ip_mat_padding per funzionare
+            pad_h = (f -> h - 1) / 2;                                       //dimensione padding (per singolo lato) P = (dim.filtro - 1) / 2
+            pad_w = (f -> w - 1) / 2;
 
+            ip_mat * filter = ip_mat_padding(a, pad_h, pad_w);              //creazione ip_mat paddata
 
+            ip_mat * result = ip_mat_create(a -> h, a -> w, a -> k, 0,0);   //creazione ip_mat per il risulatato
+
+    } else if(!*a || !*f) {
+        printf("Errore ip_mat_convolve");
+        printf("\n");
+        printf("La matrice o il filtro in ingresso non esistono");
+        exit(1);
+        }
+}
 
 /* Aggiunge un padding all'immagine. Il padding verticale è pad_h mentre quello
  * orizzontale è pad_w.
