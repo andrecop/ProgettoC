@@ -198,7 +198,7 @@ void compute_stats_channel(ip_mat * t, int k, float * minimo, float * massimo, f
         printf("Il canale non è presente nella matrice");
         exit(1);
     }
-} 
+}
 
 /* Calcola il valore minimo, il massimo e la media per ogni canale
  * e li salva dentro la struttura ip_mat stats
@@ -738,7 +738,7 @@ ip_mat * ip_mat_corrupt(ip_mat * a, float amount){
  * */
 ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f);
     //funzione di base della parte 3, ma prima ha bisogno di usare ip_mat_padding
-
+        //TODO: controllo a/f != NULL; padding a (richiede calcolo padding basato su w/h di f)
 
 
 
@@ -751,7 +751,7 @@ ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f);
  * con valori nulli sui bordi corrispondenti al padding e l'immagine "a" riportata
  * nel centro
  * */
-ip_mat * ip_mat_padding(ip_mat * a, int pad_h, int pad_w){
+ip_mat * ip_mat_padding(ip_mat * a, int pad_h, int pad_w){     //TODO: da testare
     if(*a){
         ip_mat * padded;                                       //nuova matrice
         unsigned int ih, iw, ik;                               //variabili scorrimento cicli
@@ -785,15 +785,35 @@ ip_mat * ip_mat_padding(ip_mat * a, int pad_h, int pad_w){
 
 /* Crea un filtro di sharpening */
 ip_mat * create_sharpen_filter();
+        //matrice 3x3 a valori fissi
 
 /* Crea un filtro per rilevare i bordi */
 ip_mat * create_edge_filter();
+        //matrice 3x3 a valori fissi
 
 /* Crea un filtro per aggiungere profondità */
 ip_mat * create_emboss_filter();
+        //matrice 3x3 a valori fissi
 
 /* Crea un filtro medio per la rimozione del rumore */
-ip_mat * create_average_filter(int w, int h, int k);
+ip_mat * create_average_filter(int w, int h, int k){    //TODO: da testare
+    if(w>0 && h>0 && k>0){
+                                                        //matrice w x h; valore su ogni cella è c = 1 / (w*h)
+        ip_mat * filter;                                //nuova matrice (ovvero il filtro)
+        float c = 1 / (w * h);                          //calcolo valore medio del filtro
+
+        filter = ip_mat_create(h, w, k, c);             //creazione filtro medio con valore c
+
+        compute_stats(filter);                          //calcolo stats
+
+        return filter;                                  //output filtro
+    } else if (w<=0 || h<=0 || k<=0){
+        printf("Errore create_average_filter");
+        printf("\n");
+        printf("Dati in ingresso minori o uguali a 0");
+        exit(1);
+    }
+}
 
 /* Crea un filtro gaussiano per la rimozione del rumore */
 ip_mat * create_gaussian_filter(int w, int h, int k, float sigma);
