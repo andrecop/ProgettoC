@@ -797,16 +797,66 @@ ip_mat * ip_mat_padding(ip_mat * a, int pad_h, int pad_w){     //TODO: da testar
 }
 
 /* Crea un filtro di sharpening */
-ip_mat * create_sharpen_filter();
-        //matrice 3x3 a valori fissi
+ip_mat * create_sharpen_filter(){                                       //TODO: da testare
+        ip_mat * filter;                                                //nuova matrice
+        float values[] = {0, -1, 0, -1, 5, -1, 0, -1, 0};               //vettore inizializzato con i valori del filtro
+        unsigned int ih, iw, ik, dim;                                   //variabili scorrimento cicli
+        dim = 0;
 
+        filter = ip_mat_create(3, 3, 1, 0.0);                           //creazione filtro (vuoto)
+
+        for (ih = 0; ih < filter -> h; ih++){                           //inserimento valori nel filtro
+            for (iw = 0; iw < filter -> w; iw++){
+                filter -> data[ih][iw][0] = values[dim];
+                dim += 1;
+            }
+        }
+
+        compute_stats(filter);
+
+        return filter;                                                  //output filtro
+}
 /* Crea un filtro per rilevare i bordi */
-ip_mat * create_edge_filter();
-        //matrice 3x3 a valori fissi
+ip_mat * create_edge_filter(){                                          //TODO: da testare
+        ip_mat * filter;                                                //nuova matrice
+        float values[] = {-1, -1, -1, -1, 8, -1, -1, -1, -1};           //vettore inizializzato con i valori del filtro
+        unsigned int ih, iw, ik, dim;                                   //variabili scorrimento cicli
+        dim = 0;
+
+        filter = ip_mat_create(3, 3, 1, 0.0);                           //creazione filtro (vuoto)
+
+        for (ih = 0; ih < filter -> h; ih++){                           //inserimento valori nel filtro
+            for (iw = 0; iw < filter -> w; iw++){
+                filter -> data[ih][iw][0] = values[dim];
+                dim += 1;
+            }
+        }
+
+        compute_stats(filter);
+
+        return filter;                                                  //output filtro
+}
 
 /* Crea un filtro per aggiungere profondità */
-ip_mat * create_emboss_filter();
-        //matrice 3x3 a valori fissi
+ip_mat * create_emboss_filter(){                                        //TODO: da testare
+        ip_mat * filter;                                                //nuova matrice
+        float values[] = {-2, -1, 0, -1, 1, 1, 0, 1, 2};                //vettore inizializzato con i valori del filtro
+        unsigned int ih, iw, ik, dim;                                   //variabili scorrimento cicli
+        dim = 0;
+
+        filter = ip_mat_create(3, 3, 1, 0.0);                           //creazione filtro (vuoto)
+
+        for (ih = 0; ih < filter -> h; ih++){                           //inserimento valori nel filtro
+            for (iw = 0; iw < filter -> w; iw++){
+                filter -> data[ih][iw][0] = values[dim];
+                dim += 1;
+            }
+        }
+
+        compute_stats(filter);
+
+        return filter;                                                  //output filtro
+}
 
 /* Crea un filtro medio per la rimozione del rumore */
 ip_mat * create_average_filter(int w, int h, int k){    //TODO: da testare
