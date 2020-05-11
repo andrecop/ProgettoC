@@ -26,18 +26,13 @@ typedef struct{
 
 ip_mat * ip_mat_create(unsigned int h, unsigned int w, unsigned int k, float v) {
 
-    if(h != 0 && w != 0 && k != 0) {                                    // controllo se posso creare una matrice
+    if(1) {                                    // controllo se posso creare una matrice
         ip_mat * new_mat = (ip_mat *)malloc(sizeof(ip_mat));            // creo la nuova matrice
         float *** new_data;                                             // matrice 3D (data)
         unsigned int ih, iw, ik;                                        // variabili per scorrere la matrice 3D
         stats * new_stats;                                              // matrice di stats (3D, una dimensione per canale)
 
-        if(!new_mat){
-            printf("Errore ip_mat_create");
-            printf("\n");
-            printf("La malloc 1 non è andata a buon fine");
-            exit(1);
-        }
+        
                                                                         // inizializzo le varibili della matrice
         new_mat->h = h;                                                 // altezza
         new_mat->w = w;                                                 // lunghezza
@@ -45,12 +40,7 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w, unsigned int k, float v) 
 
         new_stats = (stats *)malloc(sizeof(stats) * k);                 // creo la matrice di stats
 
-        if(!new_stats){
-            printf("Errore ip_mat_create");
-            printf("\n");
-            printf("La malloc 2 non è andata a buon fine");
-            exit(1);
-        }
+        
 
         for(ik = 0; ik < k; ik++) {                                     // inizializzo stats
             new_stats[ik].max = v;                                      // creo il massimo
@@ -60,32 +50,17 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w, unsigned int k, float v) 
                                                                         // inizializzo la matrice 3D
         new_data = (float ***)malloc(sizeof(float **) * h);             // creo matrice altezza
 
-        if(!**new_data){
-            printf("Errore ip_mat_create");
-            printf("\n");
-            printf("La malloc 3 non è andata a buon fine");
-            exit(1);
-        }
+        
 
         for(ih = 0; ih < h; ih++) {
             new_data[ih] = (float **)malloc(sizeof(float *) * w);       // aggiungo dimensione lunghezza
 
-            if(!new_data[ih]){
-                printf("Errore ip_mat_create");
-                printf("\n");
-                printf("La malloc 4 non è andata a buon fine");
-                exit(1);
-            }
+            
 
             for(iw = 0; iw < w; iw++) {
                 new_data[ih][iw] = (float *)malloc(sizeof(float) * k);  // aggiungo i canali
 
-                if(!new_data[ih][iw]){
-                    printf("Errore ip_mat_create");
-                    printf("\n");
-                    printf("La malloc 5 non è andata a buon fine");
-                    exit(1);
-                }
+                
 
                 for(ik = 0; ik < k; ik++) {
                     new_data[ih][iw][ik] = v;                           // setto il valore di default
@@ -299,11 +274,11 @@ ip_mat * ip_mat_copy(ip_mat * in){
 ip_mat * ip_mat_subset(ip_mat * t, unsigned int row_start, unsigned int row_end, unsigned int col_start, unsigned int col_end){
 
     // controllo la matrice esista e che row e col (sia start che end) siano all'interno della matrice in ingresso
-    if(t && (row_start > 0 && row_start < t->h) && (row_end > 0 && row_end < t->h) && (col_start > 0 && col_start < t->w) && (col_end > 0 && col_end < t->w)){
+    if(1){
         ip_mat * sub;                                                                   // nuova sotto-matrice
         unsigned int ih, iw, ik;                                                        // variabili per scorrere
 
-        sub = ip_mat_create(t->h - row_start, t->w - col_start, t->k, 0.0);                      // creo una nuova ip_mat
+        sub = ip_mat_create((row_end+1 - row_start),(col_end+1 - col_start), t->k, 0.0);                      // creo una nuova ip_mat
 
         for(ih = row_start; ih < row_end; ih++){
             for(iw = col_start; iw < col_end; iw++){
@@ -317,16 +292,6 @@ ip_mat * ip_mat_subset(ip_mat * t, unsigned int row_start, unsigned int row_end,
 
         return sub;                                                                     // fine
 
-    } else if (t) {
-        printf("Errore ip_mat_subset");
-        printf("\n");
-        printf("Le posizioni in ingresso non sono presenti all'interno della matrice");
-        exit(1);
-    } else {
-        printf("Errore ip_mat_subset");
-        printf("\n");
-        printf("La matrice in ingresso non esiste");
-        exit(1);
     }
 }
 
@@ -770,39 +735,191 @@ ip_mat * ip_mat_corrupt(ip_mat * a, float amount){
     }
 }
 
+ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f){     //TODO: da completare e testare, aggiunta qualche struttura base
+    //TODO: calcolo valori da a paddata con il filtro
+    if(a && f){
+            int pad_h, pad_w;                                               //interi richiesti da ip_mat_padding per funzionare
+            unsigned int ih,iw,ik;
+            unsigned int ih2,iw2;
+            float val = 0.0;
+            pad_h = (f -> h - 1) /2;                                       //dimensione padding (per singolo lato) P = (dim.filtro - 1) / 2
+            pad_w = (f -> w - 1) /2;
+            
+            ip_mat * result;
+            result = ip_mat_padding(a, pad_h, pad_w);   //creazione ip_mat per il risulatato
+            
+
+            for(ih = 0; ih < a->h; ih++){
+                for(iw = 0; iw < a->w; iw++){
+                    for(ih2 = 0; ih2 < f -> h;ih2++){
+                        for(iw2 = 0; iw2 < f -> w;iw2++){
+                            val+=(result->data[ih+ih2][iw+iw2][0]*f->data[ih2][iw2][0]);
+                        }
+                    }
+                    result->data[ih][iw][0] = val;
+                    val = 0.0;
+                }
+            }
+            //per applicarlo su 3 livelli:
+/*
+            for(ih = 0; ih < a->h; ih++){
+                for(iw = 0; iw < a->w; iw++){
+                    for(ik = 1; ik < a->k; ik++){
+                        result->data[ih][iw][ik] = result->data[ih][iw][0];
+                    }
+                }
+            }*/
+
+            result = ip_mat_subset(result, 0, a->h, 0, a->w);
+            return result;
+
+
+    } else {
+        printf("Errore ip_mat_convolve");
+        printf("\n");
+        printf("La matrice o il filtro in ingresso non esistono");
+        exit(1);
+        }
+}
+
+
+ip_mat * ip_mat_padding(ip_mat * a, int pad_h, int pad_w){     //TODO: da testare
+    if(1){
+        ip_mat * padded;                                       //nuova matrice
+        unsigned int ih, iw, ik;                               //variabili scorrimento cicli
+        unsigned int ph, pw, pk;                               //nuove dimensioni
+
+        ph = a->h + 2*pad_h;                                   //calcolo dimensioni paddate
+        pw = a->w + 2*pad_w;
+        pk = a->k;
+
+        padded = ip_mat_create(ph, pw, pk, 0.0);               //creazione ip_mat paddata (vuota)
+
+        //copiatura matrice originale al centro della matrice paddata vuota
+        for (ih = 0; ih < a -> h; ih++){
+                for (iw = 0; iw < a -> w; iw++){
+                    for (ik = 0; ik < a -> k; ik++){
+                        padded -> data[ih+pad_h][iw+pad_w][ik] = a -> data[ih][iw][ik];
+                    }
+                }
+        }
+
+        compute_stats(padded);
+
+        return padded;
+    } else {
+        printf("Errore ip_mat_padding");
+        printf("\n");
+        printf("La matrice in ingresso non esiste");
+        exit(1);
+    }
+}
+
+
+ip_mat * create_sharpen_filter(){                                       //TODO: da testare
+        ip_mat * filter;                                                //nuova matrice
+        float values[] = {0, -1, 0, -1, 5, -1, 0, -1, 0};               //vettore inizializzato con i valori del filtro
+        unsigned int ih, iw, dim;                                   //variabili scorrimento cicli
+        dim = 0;
+
+        filter = ip_mat_create(3, 3, 1, 0.0);                           //creazione filtro (vuoto)
+
+        for (ih = 0; ih < filter -> h; ih++){                           //inserimento valori nel filtro
+            for (iw = 0; iw < filter -> w; iw++){
+                filter -> data[ih][iw][0] = values[dim];
+                dim += 1;
+            }
+        }
+
+        compute_stats(filter);
+
+        return filter;                                                  //output filtro
+}
+
+ip_mat * create_edge_filter(){                                          //TODO: da testare
+        ip_mat * filter;                                                //nuova matrice
+        float values[] = {-1, -1, -1, -1, 8, -1, -1, -1, -1};           //vettore inizializzato con i valori del filtro
+        unsigned int ih, iw, dim;                                   //variabili scorrimento cicli
+        dim = 0;
+
+        filter = ip_mat_create(3, 3, 1, 0.0);                           //creazione filtro (vuoto)
+
+        for (ih = 0; ih < filter -> h; ih++){                           //inserimento valori nel filtro
+            for (iw = 0; iw < filter -> w; iw++){
+                filter -> data[ih][iw][0] = values[dim];
+                dim += 1;
+            }
+        }
+
+        compute_stats(filter);
+
+        return filter;                                                  //output filtro
+}
+
+ip_mat * create_emboss_filter(){                                        //TODO: da testare
+        ip_mat * filter;                                                //nuova matrice
+        float values[] = {-2, -1, 0, -1, 1, 1, 0, 1, 2};                //vettore inizializzato con i valori del filtro
+        unsigned int ih, iw, dim;                                   //variabili scorrimento cicli
+        dim = 0;
+
+        filter = ip_mat_create(3, 3, 1, 0.0);                           //creazione filtro (vuoto)
+
+        for (ih = 0; ih < filter -> h; ih++){                           //inserimento valori nel filtro
+            for (iw = 0; iw < filter -> w; iw++){
+                filter -> data[ih][iw][0] = values[dim];
+                dim += 1;
+            }
+        }
+
+        compute_stats(filter);
+
+        return filter;                                                  //output filtro
+}
+
+ip_mat * create_average_filter(int w, int h, int k){    //TODO: da testare
+    if(w>0 && h>0 && k>0){
+                                                        //matrice w x h; valore su ogni cella è c = 1 / (w*h)
+        ip_mat * filter;                                //nuova matrice (ovvero il filtro)
+        float c = 1 / (w * h);                          //calcolo valore medio del filtro
+
+        filter = ip_mat_create(h, w, k, c);             //creazione filtro medio con valore c
+
+        compute_stats(filter);                          //calcolo stats
+
+        return filter;                                  //output filtro
+    } else {
+        printf("Errore create_average_filter");
+        printf("\n");
+        printf("Dati in ingresso minori o uguali a 0");
+        exit(1);
+    }
+}
+
 
 /*Funzione "clamp" per evitare gli overflow durante i filtri*/
 void clamp(ip_mat * t, float low, float high)
 {
-    unsigned int      i;
-    unsigned int      j;
-    unsigned int      terzaDim;
-    /*creo un flag per valutare se rifare o meno la compute_stats(se i valori non vengono toccati
-    non ha nessun senso rifarla) - (utilizzo un char perchè non ha senso usare 4Byte)*/
-    char              flag = 0;
+    unsigned int      ih, iw, ik;
+    int              edited = 0;
 
-    for(i = 0;i < t->h;i++)
-    {
-        for(j = 0;j < t->w;j++)
-        {
-            for(terzaDim = 0;terzaDim < t->k;terzaDim++)
-            {
-                if(get_val(t,i,j,terzaDim) < low)
-                {
-                    set_val(t,i,j,terzaDim,low);
-                    flag = 1;
+    for(ih = 0; ih < t->h; ih++) {
+        for(iw = 0; iw < t->w; iw++) {
+            for(ik = 0; ik < t->k; ik++) {
+                if(t->data[ih][iw][ik] < low) {
+                    t->data[ih][iw][ik] = low;
+                    edited = 1;
                 }
-                if(get_val(t,i,j,terzaDim) > high)
-                {
-                    set_val(t,i,j,terzaDim,high);
-                    flag = 1;
+                if(t->data[ih][iw][ik] > high) {
+                    t->data[ih][iw][ik] = high;
+                    edited = 1;
                 }
             }
         }
     }
-    if(flag)
-    {
+
+    if(edited) {
         compute_stats(t);
     }
 
+    return;
 }
