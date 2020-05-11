@@ -694,7 +694,7 @@ ip_mat * ip_mat_brighten(ip_mat * a, float bright){
                 }                                                                               // presenti in *a e *b e li
             }                                                                                   // inserisco in data
         }
-
+        clamp(brightend,0,255);
         compute_stats(brightend);                                                                   // calcolo le stats
 
         return brightend;                                                                           // fine
@@ -739,7 +739,7 @@ ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f){     //TODO: da completare e te
     //TODO: calcolo valori da a paddata con il filtro
     if(a && f){
             int pad_h, pad_w;                                               //interi richiesti da ip_mat_padding per funzionare
-            unsigned int ih,iw,ik;
+            unsigned int ih,iw;
             unsigned int ih2,iw2;
             float val = 0.0;
             pad_h = (f -> h - 1) /2;                                       //dimensione padding (per singolo lato) P = (dim.filtro - 1) / 2
@@ -753,7 +753,7 @@ ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f){     //TODO: da completare e te
                 for(iw = 0; iw < a->w; iw++){
                     for(ih2 = 0; ih2 < f -> h;ih2++){
                         for(iw2 = 0; iw2 < f -> w;iw2++){
-                            val+=(result->data[ih+ih2][iw+iw2][0]*f->data[ih2][iw2][0]);
+                            val+=((result->data[ih+ih2][iw+iw2][0])*(f->data[ih2][iw2][0]));
                         }
                     }
                     result->data[ih][iw][0] = val;
@@ -761,15 +761,32 @@ ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f){     //TODO: da completare e te
                 }
             }
             //per applicarlo su 3 livelli:
-/*
+
             for(ih = 0; ih < a->h; ih++){
                 for(iw = 0; iw < a->w; iw++){
-                    for(ik = 1; ik < a->k; ik++){
-                        result->data[ih][iw][ik] = result->data[ih][iw][0];
+                    for(ih2 = 0; ih2 < f -> h;ih2++){
+                        for(iw2 = 0; iw2 < f -> w;iw2++){
+                            val+=((result->data[ih+ih2][iw+iw2][1])*(f->data[ih2][iw2][0]));
+                        }
                     }
+                    result->data[ih][iw][1] = val;
+                    val = 0.0;
                 }
-            }*/
+            }
 
+            for(ih = 0; ih < a->h; ih++){
+                for(iw = 0; iw < a->w; iw++){
+                    for(ih2 = 0; ih2 < f -> h;ih2++){
+                        for(iw2 = 0; iw2 < f -> w;iw2++){
+                            val+=((result->data[ih+ih2][iw+iw2][2])*(f->data[ih2][iw2][0]));
+                        }
+                    }
+                    result->data[ih][iw][2] = val;
+                    val = 0.0;
+                }
+            }
+
+            clamp(result,0,255);
             result = ip_mat_subset(result, 0, a->h, 0, a->w);
             return result;
 
@@ -779,7 +796,7 @@ ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f){     //TODO: da completare e te
         printf("\n");
         printf("La matrice o il filtro in ingresso non esistono");
         exit(1);
-        }
+    }
 }
 
 
@@ -876,11 +893,11 @@ ip_mat * create_emboss_filter(){                                        //TODO: 
         return filter;                                                  //output filtro
 }
 
-ip_mat * create_average_filter(int w, int h, int k){    //TODO: da testare
+ip_mat * create_average_filter(unsigned int w, unsigned int h, unsigned int k){    //TODO: da testare
     if(w>0 && h>0 && k>0){
                                                         //matrice w x h; valore su ogni cella è c = 1 / (w*h)
         ip_mat * filter;                                //nuova matrice (ovvero il filtro)
-        float c = 1 / (w * h);                          //calcolo valore medio del filtro
+        float c = 1.0 / ((w*1.0) * (h*1.0));                          //calcolo valore medio del filtro
 
         filter = ip_mat_create(h, w, k, c);             //creazione filtro medio con valore c
 
@@ -895,6 +912,60 @@ ip_mat * create_average_filter(int w, int h, int k){    //TODO: da testare
     }
 }
 
+
+ip_mat * create_gaussian_filter(unsigned int w, unsigned int h, unsigned int k, float sigma) {
+    if(w>0 && h>0 && k>0){
+                                                        //matrice w x h; valore su ogni cella è c = 1 / (w*h)
+        ip_mat * filter;                                //nuova matrice (ovvero il filtro)
+        ip_mat * filter2; 
+        unsigned int ih, iw, ik;
+        unsigned int cx, cy;
+        cx = (w-1)/2;
+        cy= (h-1)/2;
+        filter = ip_mat_create(h, w, k, 0.0);             //creazione filtro medio con valore c
+        float val, x, y, sigma2;
+
+        for (ih = 0; ih < filter -> h; ih++){                           //inserimento valori nel filtro
+            for (iw = 0; iw < filter -> w; iw++){
+                for (ik = 0; ik < filter -> k; ik++){
+                        x = abs(iw-cx);
+                        y = abs(ih-cy);
+                        sigma2 = sigma*sigma*2.0;
+                        val = (1.0/(PI*sigma2))*expf(-(((x*x)+(y*y))/sigma2));
+                        filter -> data[ih][iw][ik] = val;
+                        
+                }
+            }
+        }
+        filter2 = ip_mat_sum(filter,filter);
+        val = 0.0;
+        for (ih = 0; ih < filter -> h; ih++){                           //inserimento valori nel filtro
+            for (iw = 0; iw < filter -> w; iw++){
+                for (ik = 0; ik < filter -> k; ik++){
+                        val+=filter -> data[ih][iw][ik];
+                        
+                }
+            }
+        }
+        for (ih = 0; ih < filter -> h; ih++){                           //inserimento valori nel filtro
+            for (iw = 0; iw < filter -> w; iw++){
+                for (ik = 0; ik < filter -> k; ik++){
+                        
+                        filter -> data[ih][iw][ik]/=val;
+                        
+                }
+            }
+        }
+        compute_stats(filter);                          //calcolo stats
+
+        return filter;                                  //output filtro
+    } else {
+        printf("Errore create_gaussian_filter");
+        printf("\n");
+        printf("Dati in ingresso minori o uguali a 0");
+        exit(1);
+    }
+}
 
 /*Funzione "clamp" per evitare gli overflow durante i filtri*/
 void clamp(ip_mat * t, float low, float high)
