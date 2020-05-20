@@ -95,7 +95,7 @@ float get_normal_random(float media, float std){
  * */
 ip_mat * ip_mat_create(unsigned int h, unsigned int w, unsigned int k, float v) {
 
-    if(1) {                                    // controllo se posso creare una matrice
+    if(h > 0 && w > 0 && k > 0) {                                    // controllo se posso creare una matrice
         ip_mat * new_mat = (ip_mat *)malloc(sizeof(ip_mat));            // creo la nuova matrice
         float *** new_data;                                             // matrice 3D (data)
         unsigned int ih, iw, ik;                                        // variabili per scorrere la matrice 3D
@@ -143,8 +143,6 @@ ip_mat * ip_mat_create(unsigned int h, unsigned int w, unsigned int k, float v) 
         return new_mat;                                                 // ritorno la matrice inizializzata
     } else {
         printf("Errore ip_mat_create");
-        printf("\n");
-        printf("La matrice deve avere tre dimensioni");
         exit(1);
     }
 }
@@ -171,9 +169,6 @@ void ip_mat_free(ip_mat *a) {
         return;                                                         // fine
 
     } else {
-        printf("Errore ip_mat_free");
-        printf("\n");
-        printf("La matrice non esiste");
         exit(1);
     }
 }
@@ -182,12 +177,10 @@ void ip_mat_free(ip_mat *a) {
 /* Restituisce il valore in posizione i,j,k */
 float get_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k) {
 
-    if((i >= 0 && i < a->h) && (j >= 0 && j < a->w) && (k >= 0 && k < a->k)) {                              // controllo che la posizione abbia senso
+    if(a && (i >= 0 && i < a->h) && (j >= 0 && j < a->w) && (k >= 0 && k < a->k)) {                              // controllo che la posizione abbia senso
         return a->data[i][j][k];                                        // restituisco il valore
     } else {
         printf("Errore get_val");
-        printf("\n");
-        printf("Le posizioni in ingresso non rientrano nella matrice");
         exit(1);
     }
 }
@@ -195,13 +188,11 @@ float get_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k) {
 /* Setta il valore in posizione i,j,k a v*/
 void set_val(ip_mat * a, unsigned int i,unsigned int j,unsigned int k, float v) {
 
-    if((i >= 0 && i < a->h) && (j >= 0 && j < a->w) && (k >= 0 && k < a->k)) {                              // controllo che la posizione abbia senso
+    if(a && (i >= 0 && i < a->h) && (j >= 0 && j < a->w) && (k >= 0 && k < a->k)) {                              // controllo che la posizione abbia senso
         a->data[i][j][k] = v;                                           // setto il valore
         return;
     } else {
         printf("Errore set_val");
-        printf("\n");
-        printf("Le posizioni in ingresso non rientrano nella matrice");
         exit(1);
     }
 }
@@ -223,16 +214,9 @@ void compute_stats_channel(ip_mat * t, int k, float * minimo, float * massimo, f
                 }
             }
         }
-        return;                                                             // fine
-    } else if(!t) {
-        printf("Errore compute_stats_channel");
-        printf("\n");
-        printf("La matrice non esiste");
-        exit(1);
+        return;   
     } else {
         printf("Errore compute_stats_channel");
-        printf("\n");
-        printf("Il canale non è presente nella matrice");
         exit(1);
     }
 } 
@@ -266,8 +250,6 @@ void compute_stats(ip_mat * t) {
         return;                                                         // fine
     } else {
         printf("Errore compute_stats");
-        printf("\n");
-        printf("La matrice non esiste");
         exit(1);
     }
 }
@@ -290,15 +272,8 @@ void ip_mat_init_random(ip_mat * t, float mean, float var) {
         compute_stats(t);                                                   // calcolo le stats
         return;                                                             // fine
 
-    } else if (var == 0) {
-        printf("Errore ip_mat_init_random");
-        printf("\n");
-        printf("La varianza non può essere nulla");
-        exit(1);
     } else {
         printf("Errore ip_mat_init_random");
-        printf("\n");
-        printf("La matrice non esiste");
         exit(1);
     }
 }
@@ -329,8 +304,6 @@ ip_mat * ip_mat_copy(ip_mat * in){
 
     } else {
         printf("Errore ip_mat_copy");
-        printf("\n");
-        printf("La matrice non esiste");
         exit(1);
     }
 }
@@ -343,7 +316,7 @@ ip_mat * ip_mat_copy(ip_mat * in){
 ip_mat * ip_mat_subset(ip_mat * t, unsigned int row_start, unsigned int row_end, unsigned int col_start, unsigned int col_end){
 
     // controllo la matrice esista e che row e col (sia start che end) siano all'interno della matrice in ingresso
-    if(1){
+    if(t && (row_start >= 0 && row_start <= row_end && row_start <= t->h) && (row_end >= 0 && row_end <= row_start && row_end <= t->h) && (col_start >= 0 && col_start <= col_end && col_start <= t->w) && (col_end >= 0 && col_end <= col_start && col_end <= t->w)){
         ip_mat * sub;                                                                   // nuova sotto-matrice
         unsigned int ih, iw, ik;                                                        // variabili per scorrere
 
@@ -361,6 +334,9 @@ ip_mat * ip_mat_subset(ip_mat * t, unsigned int row_start, unsigned int row_end,
 
         return sub;                                                                     // fine
 
+    } else {
+        printf("Errore ip_mat_subset");
+        exit(1);
     }
 }
 
@@ -438,20 +414,8 @@ ip_mat * ip_mat_concat(ip_mat * a, ip_mat * b, int dimensione){
 
         return concat;                                                                  // fine
 
-    } else if(!a) {
-        printf("Errore ip_mat_concat");
-        printf("\n");
-        printf("La matrice *a non esiste");
-        exit(1);
-    } else if(!b) {
-        printf("Errore ip_mat_concat");
-        printf("\n");
-        printf("La matrice *b non esiste");
-        exit(1);
     } else {
         printf("Errore ip_mat_concat");
-        printf("\n");
-        printf("La dimensione deve essere compresa fra 0 e 2");
         exit(1);
     }
 }
@@ -482,20 +446,8 @@ ip_mat * ip_mat_sum(ip_mat * a, ip_mat * b){
 
         return somma;                                                                       // fine
 
-    } else if(!a) {
-        printf("Errore ip_mat_sum");
-        printf("\n");
-        printf("La matrice *a non esiste");
-        exit(1);
-    } else if(!b) {
-        printf("Errore ip_mat_sum");
-        printf("\n");
-        printf("La matrice *b non esiste");
-        exit(1);
     } else {
         printf("Errore ip_mat_sum");
-        printf("\n");
-        printf("Le matrici devono avere le stesse dimensioni");
         exit(1);
     }
 }
@@ -522,20 +474,8 @@ ip_mat * ip_mat_sub(ip_mat * a, ip_mat * b){
         compute_stats(sottrazione);                                                             // calcolo le stats
         return sottrazione;                                                                     // fine
 
-    } else if(!a) {
-        printf("Errore ip_mat_sub");
-        printf("\n");
-        printf("La matrice *a non esiste");
-        exit(1);
-    } else if(!b) {
-        printf("Errore ip_mat_sub");
-        printf("\n");
-        printf("La matrice *b non esiste");
-        exit(1);
     } else {
         printf("Errore ip_mat_sub");
-        printf("\n");
-        printf("Le matrici devono avere le stesse dimensioni");
         exit(1);
     }
 }
@@ -562,8 +502,6 @@ ip_mat * ip_mat_mul_scalar(ip_mat *a, float c){
 
     } else {
         printf("Errore ip_mat_mul_scalar");
-        printf("\n");
-        printf("La matrice in ingresso non esiste");
         exit(1);
     }
 }
@@ -589,8 +527,6 @@ ip_mat *  ip_mat_add_scalar(ip_mat *a, float c){
 
     } else {
         printf("Errore ip_mat_add_scalar");
-        printf("\n");
-        printf("La matrice in ingresso non esiste");
         exit(1);
     }
 }
@@ -617,13 +553,9 @@ ip_mat * ip_mat_mean(ip_mat * a, ip_mat * b){
 
     } else if(!a) {
         printf("Errore ip_mat_mean");
-        printf("\n");
-        printf("La matrice *a non esiste");
         exit(1);
     } else {
         printf("Errore ip_mat_mean");
-        printf("\n");
-        printf("La matrice *b non esiste");
         exit(1);
     }
 }
@@ -667,8 +599,6 @@ ip_mat * ip_mat_to_gray_scale(ip_mat * in) {
 
     } else {
         printf("Errore ip_mat_to_gray_scale");
-        printf("\n");
-        printf("La matrice in ingresso non esiste");
         exit(1);
     }
 }
@@ -693,15 +623,8 @@ ip_mat * ip_mat_blend(ip_mat * a, ip_mat * b, float alpha){
 
         return bleded;                                                                           // fine
 
-    } else if(!a) {
-        printf("Errore ip_mat_blend");
-        printf("\n");
-        printf("La matrice *a non esiste");
-        exit(1);
     } else {
         printf("Errore ip_mat_blend");
-        printf("\n");
-        printf("La matrice *b non esiste");
         exit(1);
     }
 }
@@ -729,8 +652,6 @@ ip_mat * ip_mat_brighten(ip_mat * a, float bright){
 
     } else {
         printf("Errore ip_mat_brighten");
-        printf("\n");
-        printf("La matrice in ingresso non esiste");
         exit(1);
     }
 }
@@ -761,8 +682,6 @@ ip_mat * ip_mat_corrupt(ip_mat * a, float amount){
 
     } else {
         printf("Errore ip_mat_corrupt");
-        printf("\n");
-        printf("La matrice in ingresso non esiste");
         exit(1);
     }
 }
@@ -834,8 +753,6 @@ ip_mat * ip_mat_convolve(ip_mat * a, ip_mat * f){
 
     } else {
         printf("Errore ip_mat_convolve");
-        printf("\n");
-        printf("La matrice o il filtro in ingresso non esistono");
         exit(1);
     }
 }
@@ -876,8 +793,6 @@ ip_mat * ip_mat_padding(ip_mat * a, unsigned int pad_h, unsigned int pad_w){
         return padded;
     } else {
         printf("Errore ip_mat_padding");
-        printf("\n");
-        printf("La matrice in ingresso non esiste");
         exit(1);
     }
 }
@@ -966,8 +881,6 @@ ip_mat * create_average_filter(unsigned int h, unsigned int w, unsigned int k){
         return filter;                                  //output filtro
     } else {
         printf("Errore create_average_filter");
-        printf("\n");
-        printf("Dati in ingresso minori o uguali a 0");
         exit(1);
     }
 }
@@ -1021,8 +934,6 @@ ip_mat * create_gaussian_filter(unsigned int h, unsigned int w, unsigned int k, 
         return filter;                                  //output filtro
     } else {
         printf("Errore create_gaussian_filter");
-        printf("\n");
-        printf("Dati in ingresso minori o uguali a 0");
         exit(1);
     }
 }
